@@ -1,0 +1,1686 @@
+﻿【大纲】
+
+ ============搜索 tip  查看重点==========
+ ============搜索 !P  查看课程章节==========
+
+Redis简介/Redis安装
+Redis基础数据类型详解
+Redis高级命令
+Redis安全性
+Redis主从复制 - 哨兵
+Redis事务
+Redis持久化机制
+Redis数据备份与回复
+Redis发布与订阅
+Redis与java的使用-Jedis
+Redis集群搭建
+java操作Redis集群
+Redis集群与spring整合/tomcatRedis的Session共享
+Redis与java + lua脚本
+
+!P【Redis简介和Redis安装】 
+
+Redis特点
+	1：数据模型比较简单
+	2：需要灵活性更强的IT系统
+	3：对数据库性能要求较高
+	4：不需要高度的数据一致性
+	5：对于给定的key，比较容易映射复杂值的环境
+Redis简介
+	1：Redis是一个基于key - value 形式进行存储的内存型数据库
+		优点：
+			对数据高并发读写
+			对海量数据的高效率存储和访问
+			对数据的可扩展性和高可用
+		缺点：
+			redis（ACID处理非常简单）
+			无法做到太复杂的关系数据库模型
+		tip：面向互联网提供了三种策略解决方案：
+		1：主从（主节点挂了就完了）
+		2：哨兵（第四个哨兵节点，部署到新服务器上，监控主从，主挂，从节点选举主节点
+		，主节点修复了，变为从）
+		3：redis 3.0 集群。
+			多主多从
+			数据分布，均摊数据 -> 水平扩展 -> 槽的概念 -> 单点高可用
+			
+	1.1 数据存储方式为键值对
+	1.2 数据存储在内存中
+		1.2.1 优点：
+			效率高 理论值每秒10k 数据读取
+	1.3 定位：数据库软件
+		1.3.1 作用：存储数据
+	
+	2：Redis是一个NoSql数据库
+		2.1：字面理解，不适用Sql命令操作数据库软件
+		2.2：NoSQL：英文全称 Not Only SQL，表示在应用程序开发时，
+		不是必须使用关系型数据库，可以使用NoSql代替关系型数据库的部分功能
+		2.3：目前不能完全替代关系型数据库
+			2.3.1：当数据比较复杂时，不适用NoSQL数据库
+			2.3.2：关系型数据库依然做为数据存储的主要软件
+			2.3.3：NoSQL数据库当作缓存工具来使用
+			 2.3.3.1：把某些使用频率较高的内容不仅仅存储到关系
+			型数据库中，还存储到NoSql数据库中
+			2.3.3.2：先读取Nosql，没有 -> 关系型数据库
+			读出关系型数据库数据，放到NoSQL中
+			2.3.3.3：考虑Nosql和关系型数据库的数据同步问题
+	3：Redis 持久化策略
+		3.1 rdb -> readDB
+			3.1.1 默认的持久化策略
+			3.1.2 每隔一段时间会把内存中数据持久化到
+			dump.rdb文件中。（覆盖）
+			3.1.3 缺点：
+				3.1.3.1：数据过于集中
+				3.3.3.2：可能导致最后的数据没有持久化
+				到dump.rdb中
+					3.3.3.2.1 ：解决方法：
+						使用命令 SAVE 或 BGSAVE手动持久化
+		3.2 aof
+			3.2.1：监听redis的日志文件，监听如果发现执行了修改，删除，新增
+			就会立即根据这条命令把数据写到持久化
+			3.2.2：缺点
+				3.2.2.1：和关系型数据库差别不大了，效率降低
+			3.2.3：优点
+				保证数据准确性
+
+-------------------------------------------------------------------------------------------------------------------
+
+Redis安装：tip：
+	如果没有c++编译
+	yum install -y gcc-c++
+	yum -y install wget
+1.下载压缩包
+	浏览器打开：http://download.redis.io/releases/
+	wget http://download.redis.io/releases/redis-3.0.0-rc1.tar.gz
+	
+2.解压压缩包
+	tar xzf redis-2.8.3.tar.gz
+3.将其移动到usr/local目录下并重命名为redis
+	mv redis-2.8.3 /usr/local/redis
+4.切换到该目录下
+	cd /usr/local/redis/
+5.利用4个CPU 进行编译
+	make -j4
+6.将编译后的文件添加到启动目录中
+	make install 
+7.查看redis服务是否正常
+	redis-server
+8：在 /usr/local/ 建立俩文件夹
+	存放redis的配置文件/包括存储文件
+	mkdir -p /usr/local/redis-base/etc
+	存放redis脚本
+	mkdir -p /usr/local/redis-base/bin
+9：转移文件
+	cp /usr/local/redis/redis.conf /usr/local/redis-base/etc
+	cd /usr/local/redis/src
+	(把绿的全弄走)
+	mv /usr/local/redis/src/mkreleasehdr.sh redis-benchmark redis-check-aof redis-check-dump redis-cli redis-server /usr/local/redis-base/bin
+10：检查服务是否正常
+	指定脚本，指定配置文件
+	/usr/local/redis-base/bin/redis-server /usr/local/redis-base/etc/redis.conf
+	后台启动 nohup /usr/local/redis-base/bin/redis-server /usr/local/redis-base/etc/redis.conf &
+	或者
+	redis.conf 里 daemonize yes
+	/usr/local/redis-base/bin/redis-server /usr/local/redis-base/etc/redis.conf
+11：启动客户端
+	/usr/local/redis-base/bin/redis-cli
+		127.0.0.1:6379> keys *
+		(empty list or set)
+		127.0.0.1:6379> set name wty
+		OK
+		127.0.0.1:6379> get name
+		"wty"
+		127.0.0.1:6379> set age 30
+		OK
+		127.0.0.1:6379> get age
+		"30"
+	退出客户端：
+		抗戳 + c  或者  quit  或者 exit
+	关闭服务端：
+		/usr/local/redis-base/bin/redis-cli shutdown
+		或者
+		ps -ef | grep redis
+		kill -9 (进程号)
+		pkill redis-server
+	cd /usr/local/redis-base/
+	ll
+	dump.rdb 存在这里。 默认 ./ 也就是 redis.conf 的上一层目录
+		可以更改位置 redis.conf -> dir ./ -> dir /usr/local/redis-base/etc
+
+	删除了dump.rdb
+	rm -r 
+	服务重启数据就没了。。。。
+
+	##非必须。。##
+12.修改redis.conf文件
+	(1).允许任意ip访问
+		在# bind 127.0.0.1添加
+		bind 0.0.0.0
+	(2).指定redis使用守护进程的方式启动
+		在#daemonize no添加
+		daemonize yes
+	(3).设置密码123456
+		在# requirepass foobared添加
+		requirepass 123456
+13.切换到redis的utils目录下将redis设置为系统服务
+	切换目录：cd utils
+	查看文件：ll
+	设置为系统服务：./install_server.sh
+	一路回车
+14.检测服务注册信息
+	chkconfig --list | grep redis
+15.查看状态信息
+	systemctl status redis_6379
+16.开启服务端
+	redis-server redis.conf  # redis服务以配置文件启动
+17.开启客服端（指定端口和登录密码）
+	redis-cli -h 127.0.0.1 -p 6379 -a 123456
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+!P【Redis基础数据类型详解】
+redis命令手册：Redis常用命令
+	http://doc.redisfans.com/
+
+Value常用类型：
+	Key （键）
+	
+	String（字符串） 
+	Hash（哈希表） 
+	List（列表） 
+	Set（集合） 
+	SortedSet（有序集合） 
+	
+	Pub/Sub（发布/订阅）
+	Transaction（事务）
+
+string 新增：set key value [EX seconds] [PX milliseconds] [NX|XX]
+string 删除：del key
+string 修改：set key value
+string 查询：get key
+
+string测试命令
+	set name wty	--增
+	get name		--查byKey
+	set name ytw	--改
+	get name		
+	del name		--删byKey
+
+	set name wty
+	get name
+	set name ytw
+	get name
+	setnx name wty	--如果这个key -> name 不存在，我就set value为wty，存在返回0
+	get name
+	del name
+
+	setex name 10 wty	--设置key 为 name 的 值为 wty key和value只存在10秒钟
+	get name
+	keys *
+	十秒钟后。。。。。
+	get name
+	keys *
+
+	setrange		--替换指定字符串
+	set name wty
+	get name
+	setrange name 0 t	--把key 为 name ，value 为 wty的数据的第一个字符替换为 t （下标）
+	get name
+	del name
+	
+	mset name wty age 123 salary 1	--一次性设置多个key value
+	keys *
+	mget name age salary		--一次性获取多个 value by keys
+	del name age salary			--一次性删除多个key value by keys
+
+	set name wty
+	getset name ytw		--通过key获取到原来的value，并改为新value
+	get name
+	del name
+
+	incr 和 decr	--使一个值递增 或 递减
+	set age 20
+	get age
+	incr age
+	get age
+	decr age
+	get age
+	del age
+
+
+	incrby 和 decrby	--是一个值步长的递增 或 递减
+	set age 10
+	get age
+	incr age 10
+	get age
+	decrby age 10
+	get age
+	del age
+
+
+	append [name]	--字符串追加
+	set name wty
+	get name
+	append name 123
+	get name
+	del name
+	keys *
+
+	strlen [name]	--获取字符串长度
+	set name wty123456789
+	get name
+	getset name wty
+	append name 111
+	setrange	name 3 123
+	get name
+	strlen name
+	del name
+
+
+*hash：工作中用的最多的类型
+	tip：
+		可以映射各种各样的需求
+		类似于java里面的HashMap
+		是String 类型的field和value的映射表，也可以说String集合
+		Hash比String存储占用内存空间更少，方便存取整个对象
+
+
+hash测试命令：
+	-hset
+		hset hashname key value
+		hashname:
+			hash的名字
+		key：
+			字段key
+		value:
+			值
+	-hget
+		hget hashname key		--针对性的取一条数据
+
+	hset user id 1
+	hset user name wty
+	hset user age 19	keys *
+	get user --错误的写法。。。
+	hget user --错误的写法
+	hget user id
+	hget user name
+	hget user age
+	del user
+
+	-hmset	-批量添加数据到hash表
+
+		hmset user id 1 name wty age 19	
+		hget user id 
+		hget user name
+		hget user age
+
+	-hmget	-批量获取hash
+
+		hmget user id name age
+		del user
+	
+	-变态点试试：
+		hmset user id 1 name wty age 19 id 2 name www age 1
+		hmget user id name age
+		后来的会覆盖前面的。。所谓批处理不是批处理而是批处理。。
+		del user
+		
+	-hsetnx	-不存在的时候set，存在不set
+		hsetnx user id 1 
+		hsetnx user name wty
+		hsetnx user age 19
+		hmget user id name age
+		hsetnx user id 1
+		返回0
+		hmget user id name age
+
+	-hincrby 和 hdecrby		-集合递增递减
+
+		hincrby user age 1
+
+	-hexists	--判断key在hash中是否存在
+
+		hexists user name
+		hexists user name1
+	
+	-hlen	返回hash集合里面有多少个键
+
+		hlen user
+
+	-hdel	--指定删除hash的字段
+		
+		hset user salary 1
+		hmget user id name age salary
+		hdel user salary
+		hmget user id name age salary
+	
+	-hkeys	--获取hash里面所有字段
+
+		hkeys user
+
+	-hvals	--返回hash的所有value
+
+		hvals user
+	
+	-hgetall	--返回hash里所有key value
+
+		hgetall user
+		
+		
+		
+
+
+
+List:
+	tip：
+		是一个链表的集合，	类似于java中的Queue...
+		主要功能有push，pop，获取元素等。
+		细致点说List是一个双端链表结构（java的DeQueue），可以操作集合的header 或者 tail 添加删除元素
+		这玩意可以当作栈，也能做消息队列，可以设置数据的过期时间啥的。
+
+
+
+List测试命令：
+	-lpush	--从头部加入元素，先进后出（Stack）
+	
+		flushdb
+		keys *
+		lpush list1 wty
+		lpush list1 www
+		keys *
+		lrange list1 0 -1 	-lrange	查询List里面的元素，从0开始，一直到-1找不到为止
+		查出来的数据 -> 老数据在底下，新数据在上头
+
+	-rpush	--从尾部加入元素（Queue），先进先出
+
+		rpush list2 hello
+		rpush list2 world
+		lrange list2 0 -1
+		查询出来的数据 -> 新的在上头，老的在下头
+
+	-linsert	--插入元素
+		
+		lpush list3 aaa
+		lpush list3 bbb
+		
+		先取出来bbb，再取出来aaa
+		lrange list3 0 -1
+
+		linsert list3 before "one" "three"
+		
+		lrange list3 0 -1
+
+		linsert list3 after ccc ddd
+
+		lrange list3 0 -1
+
+
+	-lset	--将指定的下表元素替换掉
+
+		lpush list4 wty
+		lpush list4 www
+		lpush list4 ttt
+		lpush list4 yyy
+		lpush list4 ytw
+		lrange list4 0 -1
+		lset list4 2 wty
+		lrange list4 0 - 1
+
+	-lrem	--删除元素返回删除个数
+
+		lrem list4 1 wty
+		lrange list4 0 -1	
+		lpush list4 wty
+		lpush list4 wty
+		lrange list4 0 -1
+		lrem list4 1 wty	--删除除了第一个以外的 1 wty之外的其他wty
+		lrange list4 0 -1		
+
+	-ltrim：	保留指定key的值范围内的数据
+		lpush list5 1
+		lpush list5 2
+		lpush list5 3
+		lpush list5 4
+		lpush list5 5
+		lpush list5 6
+		lrange list5 0 -1
+		ltrim list5 0 2
+		查询后只剩下 6 5 4（下表）
+
+	-lpop：	--从list头删除数据，并返回数据
+		lpop list5
+
+	-rpop	--从尾部删除数据，并返回数据
+		rpop list5
+
+	-rpoplpush：	--从尾部删除元素，从头部加入元素
+
+		lpush list6 a
+		lpush list6 b
+		lpush list6 c
+		lpush list6 d
+		lpush list6 e
+		rpoplpush list6 list6
+
+	-lindex：		--返回名称为key的list中 index位置的元素
+
+		lindex list6 0
+		lindex list6 1
+
+	-llen：		--返回元素的个数
+
+		llen list6
+
+
+Set：
+	Set集合是String类型的无需集合，通过hashTable实现，我们可以查询集合的 交叉并补
+	
+
+Set测试命令：
+
+	-sadd：	--向名称为key的Set中添加元素
+		不允许重复元素
+	
+		clear;
+		flushdb;
+		sadd set1 a
+		sadd set1 b
+		sadd set1 c
+		sadd set1 d
+		sadd set1 e
+		keys *
+		smembers set1
+		sadd set1 a	--测试下是不是去重
+
+	-smembers	--查看set集合的元素
+
+		smembers set1
+
+	-srem：	--删除Set集合元素
+
+		srem set1 a
+		smembers set1
+
+	-spop：	--随机返回删除的key
+		spop set1
+		smembers set1
+
+	-sdiff：	--返回两个集合的不同元素（哪个集合在前面就以哪个集合为标准）
+		saad set2 a
+		saad set2 b
+		saad set2 c
+		saad set2 d
+		saad set2 e
+		saad set2 f
+		sdiff set1 set2
+
+	-sdiffstore：	--将返回的不同元素存储到另外一个集合中
+		saad set1 a
+		saad set1 b
+		saad set1 c
+		saad set2 c
+		saad set2 d
+		saad set2 e
+		sdiffstore set set1 set2
+		smembers set
+
+	-sinter	--返回集合的交集
+		flushdb
+		saad set1 a
+		saad set1 b
+		saad set1 c
+		saad set2 c
+		saad set2 d
+		saad set2 e
+
+		sinter set1 set2
+	
+	-sinterstore：返回集合的交集
+
+		sinterstore set3 set1 set2
+		
+		smembers set3
+	
+	-sunion：取并集
+
+		sunion set1 set2
+
+	-sunionstore：取得两个集合的并集，放入到第三个集合中
+
+		sunionstore set4 set1 set2
+
+		smembers set4
+
+	-smove：将一个set集合移动到另一个set集合中
+		（相当于 剪切  粘贴）
+
+		smembers set1
+		smembers set2
+
+		smove set1 set2 a
+		
+		smembers set1
+		smembers set2
+
+	-scard：查看集合里元素的个数
+
+		scard set1
+		scard set2
+
+	-sismember：判断某元素是否为集合中的元素，0代表不是i
+
+		sismember set1 a
+
+		sismember set1 b
+
+	-srandmember：随即返回一个元素
+
+		srandmember set1
+		srandmember set1
+		srandmember set1
+		srandmember set1
+
+	
+		
+ZSet ：
+	tip：
+		有序的Set,SortedSet
+
+	-zadd	--向有序集合中添加一个元素，如果该元素存在，
+		则更修顺序，重复插入会根据顺序属性更新。
+		tip：（可以做搜索的排行    rank）
+
+		flushdb
+		[命令] [集合名称] [序号] [元素]
+		zadd zset 2 b
+		zadd zset 1 a
+		zadd zset 4 d
+		zadd zset 3 c
+		zadd zset 5 e
+
+		[查询ZSet命令] [集合名称] [从几开始] [到第几个]
+		zrange zset1 0 -1
+		[查询ZSet命令] [集合名称] [从几开始] [到第几个][显示索引]
+		zrange zset1 0 -1 withscores
+
+	-zrem：	- 删除
+
+		[命令] [集合名称] [字段名称]
+		zrem set1 a
+		zrange set1 0 -1 withscroes
+	
+	-zincrby：	-以指定的值去自动递增或减少
+
+		zadd set1 1 1
+		
+		[命令] [集合名称] [序号] [增加/减少 数字]
+		zincrby set1 1 1
+
+		zincrby set1 1 -1
+
+	-zrangebyscore：	-找到指定区间范围的数据进行返回
+
+		[命令] [集合名称] [下标] [序号] [显示序号]
+		zrangebyscore set1 0 1 withscores
+
+	-zremrangebyrank：	-删除根据索引 （下标）
+
+		[命令] [集合名称] [从第几个] [到第几个]
+		zremrangebyrank set1 0 0	
+		
+	-zremrangebyscore：	-删除指定序号
+		
+		zrange set1 0 -1 withscores
+
+		zremrangebyscore set1 3 3
+
+		zrange set1 0 -1 withscores	
+	
+	-zrank：	-返回排序索引  从小到大  （升序排序之后再找索引）
+		tip：
+			注意 一个是顺序号，一个是索引zrank返回的是索引
+
+		[命令] [集合名称] [元素]	-> 返回元素下标
+		zrank set1 c
+		zrank set1 d
+		zrank set1 e
+
+	-zrevrank：	-返回排序索引 ， 从大到小排序 （降序排序之后再找索引）
+		tip：zrank的反转
+
+		zrevrank set1 c
+		zrevrank set1 d
+		zrevrank set1 e
+
+	-zcard：	-查看集合元素的个数
+
+		zcard set1
+
+	-zcount：返回集合中score 在给定区间中的数量
+	
+		3 - 5 的。
+		zcount set1 3 5
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+!P【Redis高级命令】
+
+	-keys *	--（可以模糊匹配）返回满足的所有的键	
+	
+		flushdb
+		set name wty
+		zadd set1 a
+		zadd set1 b
+		keys *
+		keys name*
+		keys *name
+		keys *1
+	
+	-exists	--是否存在指定的key
+	
+		exists name
+		exists n
+		
+	-expire	--设置某个key的过期时间，使用ttl查看剩余时间
+		tip:
+			很常用， 类似的命令 -> setex name 10 wty   
+		set aaa bbb
+
+		expire aaa 10
+
+		ttl aaa
+		
+	--ttl 	--查看某个key剩余的时间 返回 -1 为不过期
+		
+		setex age 20 19
+
+		ttl age
+
+	-persist：	--取消过期时间
+
+		setex aaa 200 bbb
+
+		ttl aaa		
+
+		persist aaa
+
+		ttl aaa
+
+	-select	--选择数据库 数据库默认为0 - 15 个，一共16个,默认进入0数据库，redis.conf可以修改数量
+		tip:
+			为什么数据库要弄成16份？
+				数据安全
+				16 / 2 或者 15 / 3	放在不同的服务器上做数据备份
+				shell脚本对rdb文件进行拆分 -> 分片的概念
+				*不同的类型访问不同的数据库
+				3.0集群已经出来了。。。分片？分毛线。取数据，运维得死一个运维。
+
+			数据库16个库怎么分配空间？
+				Redis是逻辑划分库，共享同一块空间
+
+		select 1
+		keys *
+		select 0
+		keys *
+	-move [key][数据库下标]：	--将当前数据库中的key 转移到其他数据库中
+		
+		move aaa 1
+		select 1
+		keys *
+		move aaa 0
+		select 0
+		keys *
+
+	-randomkey：	--随机返回数据库里的一个key
+
+		randomkey
+		randomkey
+		randomkey
+		randomkey
+
+	-rename：	--重命名key
+
+		rename aaa bbb
+		keys *
+
+	-echo	--打印命令
+	
+		echo aaa
+
+	-dbsize	--查看数据库的key数量
+		
+		dbsize
+
+	-info	--获取数据库信息
+
+		info
+
+	-config get 	--实时传储收到的请求（返回相关的配置信息）
+
+		config get *	(返回全部配置 redis.conf)
+
+	-flushdb	--清空当前数据库
+	
+		flushdb
+	
+	-flushall	--清空所有数据库
+
+		flushall
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+!P【Redis安全性】
+
+因为Redis基于内存，速度相当快，所以在一台比较好的服务器下，一个外部用户在1秒内可以进行15W次的密码尝试，
+这意味着你需要设定非常强大的密码来防止暴力破解。
+
+vi /usr/local/redis-base/etc/redis.conf
+	# requirepass foobared
+	requirepass wty
+重启服务器
+	pkill redis-server
+	nohup /usr/local/redis-base/bin/redis-server /usr/local/redis-base/etc/redis.conf &
+进入客户端	
+	/usr/local/redis-base/bin/redis-cli
+	
+	keys *
+	报错
+	auth wty
+	输入密码进入成功
+每次登陆都要输入密码，懒人秘籍。。。
+	直接授权登陆：
+		/usr/local/redis-base/bin/redis-cli -a wty
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+!P【Redis主从复制】
+
+主从复制：
+	tip：
+		2.0之前就有了的特性，主要目的实现一个读写分离的机制
+		主服务器负责写，从服务器负责读
+	1：Master可以拥有多个slave
+	2：多个slave可以连同一个master外，还可以连到其他Master
+	3：主从复制不会阻塞master在同步数据时 master可以继续处理client请求
+	4：提供系统的伸缩性
+
+主从复制过程：
+	1：slave与master建立连接，发送sync同步命令
+	2：master会开启一个后台进程，将数据库快照保存到文件中，同时master主进程
+	会开始手机新的命令并缓存
+	3：后台完成保存后，就将文件发送给slave
+	4：slave将此文件保存到硬盘上
+
+主从复制配置：
+	clone服务器之后修改salve的IP地址
+		clone 步骤：
+		准备工作：---------------------------------------start
+		主机器：
+			pkill redis-server
+			shutdown -h now
+
+			虚拟机 -> 主redis -> 右键 -> 管理 -> 克隆 -> 下一步 -> 下一步 。。。
+			克隆方法 --- 选择 创建完整克隆 ，下一步 -> 名称，位置 -> 完成
+				（克隆就是把机器上装的东西，全部都完整的复制一份）
+			选中刚克隆的虚拟机
+			网络适配器
+				-> 高级
+				->重新生成mac地址
+				-> 确定
+				-> 确定
+				->启动主，从虚拟机
+			克隆俩虚拟机。。步骤重复两次。
+			两个虚拟机好了之后 -> 都去执行
+				rm -rf redis
+				rm -rf redis-base
+				rm -rf redis-3.0.0-rc1.tar.gz
+			看一下 gcc存在不存在
+			yum install gcc
+		
+			远程拷贝主服务器上的redis
+			ping 192.168.122.132
+			ping 192.168.122.133
+
+			scp：远程copy
+			-r：递归
+
+			scp -r /usr/local/redis/ 192.168.112.132:/usr/local/
+			回车
+			输入密码
+			回车
+
+			scp -r /usr/local/redis-base/ 192.168.112.132:/usr/local/
+			回车
+			输入密码
+			回车
+			
+			scp -r /usr/local/redis/ 192.168.112.133:/usr/local/
+			回车
+			输入密码
+			回车
+
+			scp -r /usr/local/redis-base/ 192.168.112.133:/usr/local/
+			回车
+			输入密码
+			回车
+
+		准备工作：---------------------------------------end
+
+
+	修改两台从服务的配置文件
+		cd /usr/local/redis-base/
+		rm -rf dump.rdb
+	
+		vi /usr/local/redis-base/etc/redis.conf
+	第一步：
+		# slaveof <masterip> <masterport>
+		slaveof 192.168.112.131 6379
+
+	第二步：（主服务器有密码的话）
+		masterauth <master-password>
+		masterauth wty
+tip:
+	使用info 查看 role 角色，就可以知道主服务器或者从服务器
+	
+	设置从服务器防火墙
+		yum install firewalld firewalld-config				--安装防火墙，如果你没有的话
+		firewall-cmd --permanent --list-port				--查看端口列表
+		firewall-cmd --zone=public --add-port=6379/tcp --permanent	--放开6379端口
+		firewall-cmd --zone=public --remove-port=6379/tcp --permanent	--禁止放开6379端口
+		systemctl status firewalld 或者 firewall-cmd --state			--查看状态
+	重启防火墙
+		systemctl restart firewalld.service
+
+	启动主服务器Redis-Server：
+		nohup /usr/local/redis-base/bin/redis-server /usr/local/redis-base/etc/redis.conf &
+	启动主服务器Redis-Cli
+		/usr/local/redis-base/bin/redis-cli -a wty
+		info
+		查看#Replication
+		role:master
+		connected_slaves:0
+	启动两个从服务器：
+		nohup /usr/local/redis-base/bin/redis-server /usr/local/redis-base/etc/redis.conf &
+	来到主服务器Redis-Cli
+		info （如下显示就对了）
+	# Replication
+	role:master
+	connected_slaves:2
+	slave0:ip=192.168.112.133,port=6379,state=online,offset=1,lag=1
+	slave1:ip=192.168.112.132,port=6379,state=online,offset=1,lag=1
+	master_repl_offset:1
+	repl_backlog_active:1
+	repl_backlog_size:1048576
+	repl_backlog_first_byte_offset:2
+	repl_backlog_histlen:0
+
+	
+	主服务器Redis-Cli
+		keys *
+	从服务器
+		keys *
+主从测试：
+	主：
+		mset name wty age 19
+		mget name age
+	从：
+		mget name age
+	
+	从：
+		set salary 1
+		报错 -> (error) READONLY You can't write against a read only slave.
+		从服务器只能读，不能写哦
+
+
+
+
+哨兵
+
+	有了主从复制的实现以后，如果想对主服务器进行监控，那么Redis2.6以后提供了一个
+	“哨兵机制”，2.6版本的哨兵为1.0，不稳定，问题太多。2.8以后的版本哨兵就稳定了。
+
+	哨兵就是监控Redis运行状况的，俩功能点：
+		1：监控主数据库和从数据库是否正常运行
+		2：主数据库出现故障时，可以自动将 从数据库 转换为 主数据库，自动切换。
+		
+	原本主挂了。。。运维人员眼尖手快的发现了，找到一个从节点，
+	输入命令：
+		slaveof on one --我不是任何一个人的从，我就是主。。
+		
+		info
+		编程master了
+		运维去启动另外一个redis
+		
+		好死不死的主又挂了。。
+		运维哭了。我笑了。
+		
+实现步骤：
+	1：copy文件 sentinel.conf 到 /usr/local/redis/etc
+	2：修改sentinel.conf
+		sentinel monitor mymaster 192.168.112.131 6379 1
+		名称 / ip / 端口 / 投票选举次数
+		
+		sentinel auth-pass
+			sentinel auth-pass mymaster wty
+		
+		sentinel down-after-milliseconds mymaster 5000
+		默认1s检测一次，在这里配置超时时间 5000毫秒 = 5s，为宕机。
+
+		sentinel failover-timeout mymaster 900000
+		sentinel parallel-syncs mymaster 2
+	3：启动哨兵
+		nohup /usr/local/redis-base/bin/redis-server /usr/local/redis-base/etc/redis.conf &
+	4：查看哨兵相关信息命令：
+		/usr/local/redis-base/bin/redis-cli -h 192.168.112.131 -p 6379 info Sentinel
+	5：关闭主服务器查看集群信息：
+		/usr/local/redis/bin/redis-cli -h 192.168.112.131 -p 6379 shutdown
+
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+
+!P【Redis事务】
+
+
+Redis的事务非常简单，使用方法如下
+	首先是使用multi方法打开事务，然后进行设置，这时候设置的数据都会放入队列里面进行保存，
+	最后是同exec执行，把数据一次存储到redis中，使用discard方法取消事务
+
+打开服务端
+	nohup /usr/local/redis-base/bin/redis-server /usr/local/redis-base/etc/redis.conf &
+
+打开客户端
+	/usr/lcoal/redis-base/bin/redis-cli -a wty
+
+事务提交：	
+	multi
+	set p1 1
+	set p2 2 
+	set p3 3
+	exec
+	keys p*
+
+事务回滚：
+	multi
+	set p4 4
+	set p5 5
+	set p6 6
+	discard
+	keys p*
+	
+看一个坑人的redis事务案例：
+	keys p*
+	set name wty
+	multi
+	set aaa aaa
+	incr p1
+	incr name
+	exec
+
+。。。。出异常你妹的不回滚啊。。。。
+
+
+!P【Redis与java + lua脚本】
+	我们可以使用Redis + lua 的方式实现一个完整的事务、保证事务的原子性。学会了别干别的。。。
+	我们如何使用Redis + Lua ？
+	我们使用scriptLoad方法，把我们写好的lua脚本加载到Redis的内存中，每次重启就完蛋了。
+	scriptLoad方法会返回一个索引key，我们只需要通过这个索引的key就可以找到我们之前放到Redis里的脚本。
+	调用evalsha方法，传入索引key，以继操作键、参数值 ， 进行返回
+
+lua script:
+	local t1 = redis.call('hgetall',KEYS[1]);
+	if type(t1) == 'table' then
+		return t1;
+	end;
+
+java 
+
+	private static final String SCRIPT = "local t1 = redis.call('hgetall',KEYS[1]); \r\n" +
+            		"if type(t1) == 'table' then \r\n" +
+            		"return t1; \r\n"+
+            		"end; \r\n";
+    public void testLua(){
+        Jedis jedis = new Jedis("192.168.112.131",7001);
+        String shakey = jedis.scriptLoad(SCRIPT);
+        List<String> keys = new ArrayList<>();
+        keys.add("myhash");
+        List<String> args = new ArrayList<>();
+        Object evalsha = jedis.evalsha(shakey, keys, args);
+        if(evalsha != null){
+            List<String> evalsha1 = (List<String>) evalsha;
+            System.out.println(evalsha1);
+        }
+    }
+
+
+
+springboot redis
+
+public void testClusterLua(){
+        ScriptExecutor se = new DefaultScriptExecutor(redisTemplate);
+
+        RedisScript rs = new DefaultRedisScript(SCRIPT,String.class);
+
+        List<String> keys = new ArrayList<>();
+        keys.add("myhash");
+
+        List<String> args = new ArrayList<>();
+
+        se.execute(rs,keys,args);
+        
+        redisTemplate.setScriptExecutor(se);
+    }
+
+不支持集群环境哦。。。
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+!P【Redis持久化机制】
+
+redis 是一个支持持久化的内存数据库，也就是说redis需要经常将内存中的数据同步到硬盘来保证持久化。
+
+redis持久化的两种方式：
+	1：snapshotting（快照）默认方式，将内存中以快照的方式写入到二进制文件中，默认为
+	dump.rdb，可以通过配置设置自动做快照持久化的方式。我们可以配置redis在n秒内，如果
+	超过了m个key，就自动做快照。
+
+	snapshotting设置：
+		900秒内如果超过1个key被修改，就发起快照保存
+		save 900 1
+		
+		300秒内如果超过10个key被修改，就发起快照保存
+		save 300 10
+		
+		save 60 10000
+
+	2：append-only file （缩写aof）的方式，类似与oracle的日志，由于快照方式是
+	在一定时间间隔做一次，所以可能发生redis意外down的情况就丢失最后一次快照后
+	的所有修改的数据，aof比快照方式有更好的持久化性，是由于使用aof时，redis会将
+	每一个收到的写命令都通过write函数追加到命令中，当redis重新启动appendonly.aof，
+	aof不是立即写道硬盘上，可以通过配置文件修改强制写道硬盘中。
+	
+	append-only file 设置：
+		启动aof持久化方式，有三种修改方式
+		appendonly yes
+
+		收到写命令立即写入到磁盘，效率最慢，但保证完全的持久化
+		appendfsync always
+
+		每秒写入磁盘一次，在性能和持久化方面做了很好的折中
+		appendfsync everysec
+
+		完全依赖os 性能做好 持久化没保证
+		appendfsync no
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+!P【Redis数据备份与回复】
+
+	数据备份
+		Redis SAVA 命令相当于创建当前数据库的备份
+			一般自动备份
+
+	数据恢复
+		如果需要回复数据，只需将备份的dump.rdb 移动到redis安装目录并启动服务即可
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+
+!P【Redis发布与订阅】
+
+Redis提供了简单的发布订阅功能
+使用subscribe [频道] 进行订阅监听
+使用publish [频道] [发布内容] 进行发布消息广播
+
+一般流程：
+	先订阅，然后Publish发布消息给订阅者；
+
+订阅者：
+	subscribe wtyTV
+
+	Reading messages... (press Ctrl-C to quit)
+	1) "subscribe"
+	2) "wtyTV"
+	3) (integer) 1
+
+发布者：
+	publish wtyTV  aaaaaaaaaaa
+
+去看订阅者Redis-Cli
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+
+
+!P【Redis与java的使用-Jedis】
+
+架构，体现在技术和设计
+	技术占百分之六十
+	设计好 + 技术好 = 百分之八十
+	设计好 + 技术好 + 业务好 = 百分之百
+
+	设计图不要体现技术。
+	主要看整体设计。
+	架构图怎么做？
+	
+	电商举例子：
+		入口层面用的什么技术？
+		
+					Nginx + haproxy 等等一个组合
+
+						下游技术			分支nigix
+	
+			促销杀熟系统		购物车系统	供应商系统	支付
+		
+	项目整个有几个模块，列出来。
+	项目下的分支遇到什么技术瓶颈，亮出来体现一下；
+	要体现设计 + 技术 + 业务结合
+	
+
+tip:
+	分片：
+		hash + 数量 槽
+
+需求：
+	关系型数据库里面的User ， 有几千万或者上亿的数据
+	查询很频繁，数据量很大。
+	要求：
+		一次性的把数据加入到Redis缓存里面。。。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+
+
+!P【Redis集群搭建】
+
+在Redis3.0以前，提供了Sentinel工具来监控各Master的状态，如果Master异常，则会做主从切换，
+将slave作为master，将master作为slave。其配置也是稍微的复杂，并且各方面表现一般。现在Redis3.0
+已经支持集群的容错功能，并且非常简单。
+
+集群搭建：
+	至少需要六个节点、三个master 主节点 ， 三个从节点
+	尽量每一个主节点都有一个从节点
+
+	第一步：
+		打开之前创建的主节点master 192.168.112.131
+		cd /usr/local
+		
+		-p 递归的创建一个文件夹 redis-cluster，然后在文件夹下分别创建6个文件夹
+		mkdir -p /usr/local/redis-cluster
+
+		进入目录i：
+		cd redis-cluster/
+		
+		mkdir 7001
+		mkdir 7002
+		mkdir 7003
+		mkdir 7004
+		mkdir 7005
+		mkdir 7006
+
+	第二步：
+		把之前的redis.conf文件copy到700*下
+		
+			cp /usr/local/redis-base/etc/redis.conf /usr/local/redis-cluster/7001
+			cp /usr/local/redis-base/etc/redis.conf /usr/local/redis-cluster/7002
+			cp /usr/local/redis-base/etc/redis.conf /usr/local/redis-cluster/7003
+			cp /usr/local/redis-base/etc/redis.conf /usr/local/redis-cluster/7004
+			cp /usr/local/redis-base/etc/redis.conf /usr/local/redis-cluster/7005
+			cp /usr/local/redis-base/etc/redis.conf /usr/local/redis-cluster/7006
+
+		进行修改各个文件内容，也就是对 700*下的每一个copy的redis.conf文件进行修改！
+			
+			vi /usr/local/redis-cluster/7001/redis.conf
+
+		（1）daemonize yes (后台启动)
+
+		*（2）port 700* （分别对每个机器的端口号进行设置）
+			（单机搭建集群，每个文件夹都搞一下端口）
+			# Accept connections on the specified port, default is 6379.
+			# If port 0 is specified Redis will not listen on a TCP socket.
+			port 7001
+
+		*（3）bind 192.168.112.131（必须要绑定当前机器的ip，不然会无限悲剧下去。。深坑）
+			(单机搭建集群，就绑定当前机器ip)
+			
+			# Examples:
+			#
+			# bind 192.168.1.100 10.0.0.1
+			# bind 127.0.0.1
+			bind 192.168.112.131
+
+		*（4） dir /usr/local/redis-cluster/700*/	--指定数据文件存放位置，必须要指定不同的目录位置，不然数据丢了不负责。
+			(单机搭建集群就每个文件夹下的redis.conf 指定一个位置)
+
+			# The working directory.
+			#
+			# The DB will be written inside this directory, with the filename specified
+			# above using the 'dbfilename' configuration directive.
+			#
+			# The Append Only File will also be created inside this directory.
+			#
+			# Note that you must specify a directory here, not a file name.
+			dir /usr/local/redis-cluster/7001/
+
+
+		*（5）cluster-enabled yes （开启集群玩耍模式）
+
+			################################ REDIS CLUSTER  ###############################
+			#
+			# Normal Redis instances can't be part of a Redis Cluster; only nodes that are
+			# started as cluster nodes can. In order to start a Redis instance as a
+			# cluster node enable the cluster support uncommenting the following:
+			#
+			# cluster-enabled yes
+			cluster-enabled yes
+
+		*（6）cluster-config-file nodes700*.conf	（这里的nodes700*.conf最好对应port   -> nodes7001.conf）
+			tip:			
+				Redis的集群（Cluster环境）可以看作是一个整体，其他的任何一个节点，都要能够感知到其他节点的存在
+			
+			# Every cluster node has a cluster configuration file. This file is not
+			# intended to be edited by hand. It is created and updated by Redis nodes.
+			# Every Redis Cluster node requires a different cluster configuration file.
+			# Make sure that instances running in the same system do not have
+			# overlapping cluster configuration file names.
+			#
+			# cluster-config-file nodes-6379.conf
+			cluster-config-file nodes-7001.conf
+
+		（7）cluster-node-timeout 15000
+			集群的失效时间
+
+			# cluster-config-file nodes-6379.conf
+			cluster-config-file nodes-7001.conf
+			# Cluster node timeout is the amount of milliseconds a node must be unreachable
+			# for it to be considered in failure state.
+			# Most other internal time limits are multiple of the node timeout.
+			#
+			# cluster-node-timeout 15000
+			cluster-node-timeout 15000
+
+		（8）appendonly yes
+			开启aof持久化机制
+
+		:wq
+		7002 7003 7004 7005 7006 一样的操作
+
+
+	第三步：(第二步的时候已经做了。。。)
+		tip:
+			*把修改后的配置文件，分别copy到各个文件夹下，注意每个文件要改端口号，并且，nodes文件也不要相同！
+	
+	第四步：
+		由于redis集群需要ruby命令，所以要安装ruby
+		
+		yum install ruby
+		yum install rubygems
+		gem install redis （这个是redis 和 ruby 的接口）
+
+		[root@localhost redis-cluster]# gem install redis
+		Fetching: redis-4.1.3.gem (100%)
+		ERROR:  Error installing redis:
+		redis requires Ruby version >= 2.3.0.
+
+		1.安装RVM：
+		gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+		
+		curl -L get.rvm.io | bash -s stable
+
+		find / -name rvm -print
+
+		source /usr/local/rvm/scripts/rvm
+
+		查看RVM库中已知的红宝石版本
+		rvm list known
+
+		安装一个红宝石版本
+		rvm install 2.3.3
+
+		使用ruby的版本
+		rvm use 2.3.3
+
+		设置默认版本
+		rvm use 2.3.3 --default
+
+		卸载一个已知版本
+			我报错的版本是redis requires Ruby version >= 2.3.0.
+		rvm remove 2.3.0
+
+		查看ruby 版本
+		ruby --version
+
+		继续安装redis
+		gem install redis
+
+	第五步：
+		分别启动6个redis实例。然后看下是不是成功了
+		
+		nohup /usr/local/redis-base/bin/redis-server /usr/local/redis-cluster/700*/redis.conf &
+
+		ps -ef | grep redis
+
+	第六步：
+		首先到redis的安装目录下，执行redis-trib.rb命令
+		
+		Usage: redis-trib <command> <options> <arguments ...>
+
+		  create          host1:port1 ... hostN:portN	--创建
+	                	  --replicas <arg>
+		  check           host:port	--检查
+		  fix             host:port	--定位
+		  reshard         host:port	--重新分片
+		                  --from <arg>
+		                  --to <arg>
+		                  --slots <arg>
+		                  --yes
+		  add-node        new_host:new_port existing_host:existing_port	--添加节点
+		                  --slave
+		                  --master-id <arg>
+		  del-node        host:port node_id	--删除节点
+		  set-timeout     host:port milliseconds	--设置超时时间
+		  call            host:port command arg arg .. arg	--调用方法
+		  import          host:port		--引入
+		                  --from <arg>
+		  help            (show this help)		--帮助
+
+		For check, fix, reshard, del-node, set-timeout you can specify the host and port of any working node in the cluster.
+
+		（单机版伪集群）
+		cd /usr/local/redis-base/bin
+		
+		tip:
+			<./ redis-trib create --replicas 1>
+			执行redis-trib 脚本 里面的 create 方法里面的 replicas 比例为 1
+			比例:
+				主节点3个，从节点3个 比例 = 1
+				主节点6个，从节点12个 比例 = 0.5
+				主节点6个，从节点3个 比例 2
+				主节点个数 / 从节点个数 = 比例
+			*** ： 比例为1，节点设置 6 个，默认前三个为主节点，后三个为从节点
+				并且：192.168.112.131.7001 和 192.168.112.131.7004 一定会是一个主从对应关系
+				7001为主，7004为从
+				主节点有槽的概念，从节点没有，因为从节点只读不写。
+
+			./redis-trib.rb create --replicas 1 192.168.112.131:7001 192.168.112.131:7002 192.168.112.131:7003 192.168.112.131:7004 192.168.112.131:7005 192.168.112.131:7006
+
+			onnecting to node 192.168.112.131:7001: [ERR] Sorry, can't connect to node 192.168.112.131:7001
+
+			bind配置不对			
+			bind 192.168.1.13 127.0.0.1
+
+			密码要去掉（我中的这一个）
+			#requirepass 123456
+				pkill redis-server
+				重启服务
+				nohup /usr/local/redis-base/bin/redis-server /usr/local/redis-cluster/700*/redis.conf &
+
+		结果：
+			[root@localhost bin]# ./redis-trib.rb create --replicas 1 192.168.112.131:7001 192.168.112.131:7002 192.168.112.131:7003 192.168.112.131:7004 192.168.112.131:7005 192.168.112.131:7006
+			>>> Creating cluster
+			Connecting to node 192.168.112.131:7001: OK
+			Connecting to node 192.168.112.131:7002: OK
+			Connecting to node 192.168.112.131:7003: OK
+			Connecting to node 192.168.112.131:7004: OK
+			Connecting to node 192.168.112.131:7005: OK
+			Connecting to node 192.168.112.131:7006: OK
+			>>> Performing hash slots allocation on 6 nodes...
+			Using 3 masters:
+			192.168.112.131:7001
+			192.168.112.131:7002
+			192.168.112.131:7003
+			Adding replica 192.168.112.131:7004 to 192.168.112.131:7001
+			Adding replica 192.168.112.131:7005 to 192.168.112.131:7002
+			Adding replica 192.168.112.131:7006 to 192.168.112.131:7003
+			M: 627a18ad2104eb45bc0fb2560b76fdf362d4b767 192.168.112.131:7001
+			   slots:0-5460 (5461 slots) master
+			M: 30b1f69dc930833ee09b991a4917066657dc4932 192.168.112.131:7002
+			   slots:5461-10922 (5462 slots) master
+			M: 22a3b462f527be8f93debfe7542e6a9ac6149ccb 192.168.112.131:7003
+			   slots:10923-16383 (5461 slots) master
+			S: 6acf5633b349e94719068bdddffddf6b44b3670c 192.168.112.131:7004
+			   replicates 627a18ad2104eb45bc0fb2560b76fdf362d4b767
+			S: f2a9e5a3ac42dbcf8ef756bafbd2f42e27b51acf 192.168.112.131:7005
+			   replicates 30b1f69dc930833ee09b991a4917066657dc4932
+			S: f1f6e1b881e5d8f21f84e777269cf877664c2622 192.168.112.131:7006
+			   replicates 22a3b462f527be8f93debfe7542e6a9ac6149ccb
+			Can I set the above configuration? (type 'yes' to accept): yes		--是不是你想要的结果？？？ yes
+
+			>>> Nodes configuration updated
+			>>> Assign a different config epoch to each node
+			>>> Sending CLUSTER MEET messages to join the cluster
+			Waiting for the cluster to join...........
+			....
+			...
+			[OK] All 16384 slots covered.
+			一共有16384个槽。。
+			
+	第七步：
+		集群搭建成功了。。。头脑子疼
+		验证一下是否成功
+		（1）链接任意一个客户端即可：
+			/usr/lcoal/redis-base/bin/redis-cli -c -h -p
+			-c表示集群模式，-h 地址 host，-p 端口号
+			/usr/local/redis-base/bin/redis-cli -c -h 192.168.112.131 -p 7001
+
+		（2）进行验证：
+			cluster info	--查看集群信息
+			cluster nodes	--查看节点列表
+	tip:			
+			7001
+				keys *
+				set name wty
+				exit
+			-> Redirected to slot [5798] located at 192.168.112.131:7002
+			会把数据存储在第5798个槽，这个机器属于7002
+				redis集群存储数据不是按照当前登陆的机器去存储的。原因是分槽了。。。
+				
+				get name
+				可以从7002获取到数据
+
+			/usr/local/redis-base/bin/redis-cli -c -h 192.168.112.131 -p 7002
+				keys *
+				exit
+
+			/usr/local/redis-base/bin/redis-cli -c -h 192.168.112.131 -p 7003
+				keys *
+				exit
+
+			/usr/local/redis-base/bin/redis-cli -c -h 192.168.112.131 -p 7004
+				keys *
+				exit
+
+			/usr/local/redis-base/bin/redis-cli -c -h 192.168.112.131 -p 7005
+				keys *
+				exit
+
+			/usr/local/redis-base/bin/redis-cli -c -h 192.168.112.131 -p 7006
+				keys *
+				exit
+
+		（3）进行数据操作验证
+		（4）关闭集群则需要逐个进行关闭：
+			/usr/local/redis-base/redis-cli -c -h 192.168.112.131 -p 700* shutdown
+
+	第八步：（多说一句）
+
+		友情提示：
+			当集群无法启动时，删除临时的数据文件，再次重新启动 每一个 Redis服务，然后重新构造集群环境
+
+		redis-trib.rb 官方群操作命令：
+			http://redis.io/topics/cluster-tutorial
+		推荐博客：
+			http://blog.51yip.com/nosql/1726.html/comment-page-1
+
+
+		tip:
+			集群不想要了怎么办？
+		把：
+			/usr/local/redis-cluster/700* 下的nodes-700*.conf 文件干掉
+
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+!P【java操作Redis集群】
+
+com.wty.redis.redis01.TestRedisCluster
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+!P【Redis集群与spring整合/tomcatRedis的Session共享】
+
+Redis集群与spring整合
+
+spring -> application.xml
+
+<context:property-placeholder location="classpath:redis.properties" />
+<context:component-scan base-package="com.wty.redis"></context:component-scan>
+
+<bean id="jedisPooConfig" class="redis.clients.jedis.JedisPoolConfig">
+	<property name="" value="" />
+	<property name="" value="" />
+	<property name="" value="" />
+	<property name="" value="" />
+</bean>
+
+<bean id="hostport1" class="redis.clients.jedis.HostAndPort">
+	<constructor-arg name="host" value="192.168.112.131" />
+	<constructor-arg name="port" value="7001" />
+</bean>
+
+... 中间省略了
+
+<bean id="hostport7" class="redis.clients.jedis.HostAndPort">
+	<constructor-arg name="host" value="192.168.112.131" />
+	<constructor-arg name="port" value="7007" />
+</bean>
+
+
+<bean id="redisCluster" class="redis.clients.jedis.JedisCluster">
+	<constructor-arg name="nodes">
+		<set>
+			<ref bean="hostport1" />
+			...
+			<ref bean="hostport7" />
+		</set>
+	</constructor-arg>
+
+	<constructor-arg name="timeout" value="6000" />
+
+	<constructor-arg name="nodes" name="poolConfig">
+		<ref bean="jedisPooConfig" />
+	</constructor-arg>
+
+</bean>
+
+
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+Redis雪崩，穿透，击穿
+
+	缓存雪崩，是指在某一时间段，缓存集中过期失效。或者Redis实例集中宕机
+	
+	缓存穿透，是指查询一个数据库一定不存在的数据。正常的使用缓存流程是，
+	数据查询先进行缓存查询，如果key不存在或者key已经过期，再对数据库进行查询，
+	并把查询到的对象放进缓存。如果数据库查询对象为空，则不放进缓存
+	
+	缓存击穿，指一个key非常热点，在不停的扛着大并发，大并发集中对这一个点进行访问，
+	当这个key的失效瞬间，持续的大并发就击破缓存，直接请求数据库
+	key -> 不过期
+
+
