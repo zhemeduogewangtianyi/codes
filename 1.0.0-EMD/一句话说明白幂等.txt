@@ -1,0 +1,3 @@
+A 服务查询当前服务 版本号 1
+A带着版本号来修改
+update table set money = money + 100 , version = version + 1 where id = ? and version = 1

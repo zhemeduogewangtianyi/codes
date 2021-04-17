@@ -1,0 +1,64 @@
+﻿https://opsx.alibaba.com/mirror
+SpringBoot + 高并发消息处理EDM项目实战
+
+
+为搭建Redis集群环境，需要安装多个虚拟机，IP要求不同
+127.79.67.143
+
+主
+ssh root@192.168.112.129
+从
+ssh root@192.168.112.130
+
+虚拟机 -> 设置 -> 网卡适配器 -> 高级 -> 重新生成MAC地址 -> 确定
+00:50:56:37:0A:8F
+00:50:56:23:FD:17
+
+启动虚拟机
+
+vi /etc/sysconfig/network-scripts/ifcfg-ens33
+
+HWADDR=00:50:56:25:BE:0E
+IPADDR=192.168.1.30 #静态IP  
+GATEWAY=192.168.0.1 #默认网关  
+NETMASK=255.255.255.0 #子网掩码  
+DNS1=192.168.0.1 #DNS 配置  
+DNS2=8.8.8.8        #谷歌地址
+
+service network restart
+
+修改Host的名称
+vi /etc/hostname
+
+打开之后的内容是：
+localhost.localdomain
+把它修改成想要的名字就可以，比如：master
+保存退出
+
+2、修改/etc/hosts文件
+
+vi /etc/hosts
+打开之后的内容是：
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+然后在最后面加一行：
+192.168.80.10   master
+保存退出，然后重启机器，这时候就可以通过hostname来访问这台机器的服务了
+
+3、映射互访问（如master和slave1）
+
+在/etc/hosts里面再加一行：
+192.168.80.10    master
+192.168.80.11    slave1
+
+4、查看主机名：
+
+uname -n //单独主机名
+
+uname -a  //详细信息
+
+hostname //单独主机名
+
+查看主机IP：
+
+hostname -i //主机IP

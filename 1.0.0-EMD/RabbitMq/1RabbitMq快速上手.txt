@@ -1,0 +1,86 @@
+RabbitMq快速上手
+
+
+processon.com
+
+一个消息队列中的消息可以被多个消费者获取吗？
+	消息队列中的一条消息，被取走就从队列中删除掉了，第二个
+消费者是取不到的。
+
+生产 -> DirectExchange -> Queue1 -> 绑定关系 -> 消费
+
+生产 -> FanoutExchange -> Queue2 (绑定关系)
+		       -> Queue3   -> 消费
+
+生产 -> TopicExchange -> Queue4 (绑定关系)
+			-> Queue5 -> 消费
+
+1：创建springboot 
+			pom加入 amqp 相关依赖
+
+（生产者）
+2:application.properties 配置 Rabbit 地址、端口、账号、密码，发送确认、
+失败回滚、ack（manual）
+
+3：创建RabbitMq的配置类，实例化交换机 (构造方法指定名称)
+					- DirectExchange(String name)
+					- FanoutExchange(String name)
+					- TopicExchange(String name)
+					- HeadersExchange(String name)
+			实例化队列（durable#持久化）
+					- Queue（String name , 
+						boolean durable）
+
+		建立交换机和队列的关系
+					- Bingding(Queue q , 
+							Exchange e)
+				BingdingBuider.bind(Queue q)
+					.to(Exechange e)
+					(规则或者RoutingKey)
+					.with(String *.k4.#)
+					(#匹配多个单词,*匹配一个单词)
+
+4:创建RabbitService注入Spring容器，
+	Service实现RabbitMqTemplate.ConfirmCallback
+		   RabbitMqTemplate.ReturnCallback
+
+编写Service send方法(String exchange , String routingKey)
+		setMandatory(this)
+		setConfirmCallback(this)
+		setReturnCallback(this)
+		convertAndSend(exchange,routingKey,message);	
+		回调确认方法
+		失败回滚方法
+		
+
+5：创建RabbitMqContorller 指定访问路径，调用Service
+
+
+
+
+（消费者）
+1:创建消费者MessageReceiver类，实例化到spring容器 ， 
+	指定监听队列@RabbitListener(queue = "queue1")
+	（看生产者@Bean的队列名称）
+
+	@RabbitHandler
+	void process(String message,Channel channel,Message msg){
+		try{
+		//传来的消息
+		System.out.println(message);
+		
+		//告诉服务器这条消息被我消费了，可以在队列删掉
+			channel.basicAck(
+				msg.getMeesageProperties().getDeliveryTag(),
+				false
+			)
+		}catch(Exception e){
+			//丢弃这条信息
+			channel.basicNack(
+				msg.getMeesageProperties().getDeliveryTag(),
+				false,
+				false
+			)
+		}
+		
+	}

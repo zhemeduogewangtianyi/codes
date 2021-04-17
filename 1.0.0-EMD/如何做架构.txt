@@ -1,0 +1,29 @@
+需求
+技术选型
+文档
+	visio、Excel
+技术落地（token问题。。）
+乐观锁、悲观锁........
+jvm调优
+	xmx nmx 堆===》设计模型、比例、标记复制算法（新生代，老年代）、栈
+		老年代专用的标记复制算法，垃圾回收，两块区域，来回倒腾
+		新生代老年代比例1:4
+		15次不回收的对象，进入老年代
+		老年代对象多占用空间大，不能采用复制法来回倒腾了
+		采用标记压缩法
+		要清空的对象做标记，把没有做标记的对象压缩到另外一端，清空标记的对象
+多线程高并发
+	synchronized、volatile、lock、condition、wait、notify、同步容器、concurrent包下、线程池、countdown、AutomicInteger
+网络编程
+	io、nio、aio、bio、mina、netty、socket
+数据库
+	sql、索引、复合索引、分区
+主流框架
+	spring全家桶、spring状态机
+hadoop、hbase、hive、zookeeper、dubbo、fastdfs、nginx、haproxy、lvs、strom、spark、disruptor(关于线程)、ActiviMQ、RabbitMq、kafka、RocketMq
+NoSql
+	redis、memcache、mongodb、12306
+搜索
+	solr、Elasticsearch
+微服务框架
+	zeroice

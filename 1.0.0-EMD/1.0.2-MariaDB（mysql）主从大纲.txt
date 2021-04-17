@@ -1,0 +1,382 @@
+问题：
+	binlog的模式怎么指定？
+	主从节点如何切换？
+		多数据源。 
+	什么时候走从库，什么时候走主库？
+	怎么做读写分离？
+
+1：创建springboot项目：
+	producer目录层级结构：
+		src
+			main
+				java
+					com.wty.mall					--基础包
+					com.wty.maill.annotation		--注解
+					com.wty.mall.config.database	--数据库配置
+					com.wty.mall.config.scheduler	--定时任务配置
+					com.wty.mall.constant			--常量
+					com.wty.mail.entity				--实体
+					com.wty.mail.enumeration		--枚举类
+					com.wty.maill.interceptor		--拦截器 或 AOP
+					com.wty.mail.mapper				--mybatis的dao层
+					com.wty.mail.mapping			--mybatis的xml文件
+					com.wty.mail.service			--service层
+					com.wty.mail.controller			--controller层面
+					com.wty.mail.task				--任务
+					com.wty.mail.utils				--工具类
+				resource
+					application.yml					--springboot配置文件
+					logback.xml						--日志配置文件
+				test
+					com.wty.mail					--单元测试
+		docs										--文档
+		
+2：准备阶段
+	pom 依赖jar包，见pom文件（数据库相关的jar先注掉。。。）
+	
+	application.application 改名为 application.yml 
+		server:
+		  servlet:
+			context-path: /
+		  port: 8081
+		  session: 900
+		  
+	com.wty.mail -> 创建 MainConfig.java 配置类
+	com.wty.maill.utils 创建 KeyUtils.java 和 FastJsonConvertUtil.java
+
+
+3：链接主从数据库 navicat	（详见 1.0.1-MariaDB（mysql）主从大纲）
+	主数据库创建 maill数据库 -> 查看主从数据库是否都有了
+
+4：启动下项目看看能不能起来
+
+5：springboot和mybatis整合
+	yml配置加上
+	spring:
+	  http:
+		encoding:
+		  charset: UTF-8
+	  jackson:
+		date-format: yyyy-MM-dd HH:mm:ss
+		time-zone: GMT+8
+		default-property-inclusion: non_null
+	  #  redis:
+	  #    pool:
+	  #      min-idle: 100
+	  #      max-idle: 100
+	  #      max-wait: -1
+	  #      max-active: 1000
+	  #    timeout: 6000
+	  #    cluster:
+	  #      max-redirects: 1000
+	  #      nodes:
+	  #        - 192.168.112.129:7001
+	  #        - 192.168.112.130:7002
+	  mail:
+		default-encoding: UTF-8
+		host: smtp.163.com
+		port: 25
+		username: baihezhuo@163.com
+		password: baihezhuo17171
+		properties:
+		  mail:
+			smtp:
+			  auth: true
+			  timeout: 30000
+	druid:
+	  type: com.alibaba.druid.pool.DruidDataSource
+	  master:
+		url: jdbc:mysql:192.168.112.129/maill
+		driver-class-name: com.mysql.jdbc.Driver
+		username: root
+		password: root
+		initialSize: 5
+		minIdle: 1
+		#      maxIdle: 10
+		maxActive: 100
+		maxWait: 60000
+		timeBetweenEvictionRunsMillis: 60000
+		minEvictableIdleTimeMillis: 300000
+		validationQuery: SELECT 1 FROM DUAL
+		testWhileIdle: true
+		testOnBorrow: false
+		testOnReturn: false
+		poolPreparedStatements: true
+		maxPoolPreparedStatementPerConnectionSize: 20
+		filters: stat,wall,log4j
+		useGlobalDataSourceStat: true
+		slave:
+		  url: jdbc:mysql:192.168.112.130/maill
+		  driver-class-name: com.mysql.jdbc.Driver
+		  username: root
+		  password: root
+		  initialSize: 5
+		  minIdle: 1
+		  #      maxIdle: 10
+		  maxActive: 100
+		  maxWait: 60000
+		  timeBetweenEvictionRunsMillis: 60000
+		  minEvictableIdleTimeMillis: 300000
+		  validationQuery: SELECT 1 FROM DUAL
+		  testWhileIdle: true
+		  testOnBorrow: false
+		  testOnReturn: false
+		  poolPreparedStatements: true
+		  maxPoolPreparedStatementPerConnectionSize: 20
+		  filters: stat,wall,log4j
+		  useGlobalDataSourceStat: true
+
+	mybatis:
+	  type-aliases-package: com.wty.maill
+	  mapper-locations: classpath:com/wty/maill/mapping/*.xml
+
+	logging:
+	  level:
+		tk.mybatis: TRACE
+
+	#mapper:
+	#  mappers:
+	#    - com.wty.maill
+	#  not-empty: false
+	#  identity: MYSQL
+
+	pagehelper:
+	  dialect: mysql
+	  reasonable: true
+	  support-methods-arguments: true
+	  params: count=countSql
+	  
+6:配置druid的数据源（主从）
+	项目启动的时候数据源都要加载进来
+	一边写，一边读 -> 传说中的读写分离。。。（高并发如何不乱套？）
+	一个方法主，一个方法从，一个方法主，一个方法从。。。。。。
+	这时候得想办法让spring来管理多个数据源，或者mybatis的sqlSessionFactory
+	开始 -> :::
+		com.wty.maill.config.database 创建Datasource配置文件
+		配置主从数据源
+		配置druid监控台，配置druid过滤器
+		访问	->	localhost:8081/druid
+		
+	第二阶段：把数据源交给SqlSessionFactory管理。
+	
+			怎么区分主从？
+			啥是读写分离？
+				实现读写分离，就意味着有俩数据源，写操作针对master，
+				读操作针对slave。
+			要求：
+				启动项目的时候，数据源启动俩。
+				通过注解去区分读写。
+			思路：
+				1：配置好俩druid数据库连接池，配置好数据源。要想法区分开俩数据源
+				2：通过mybatis配置文件，可以把两个数据源都注入到应用中。要考虑好啥时候读，
+					啥时候写。（怎么做标记）
+				3：在保证线程安全的前提下，进行主从数据源切换，要做到线程隔离，
+					并且数据源都被SqlSessionFactory管理
+					（线程不安全的话，会影响数据源获取，导致分不清主从。
+					避免从库写入，可以使用ThreadLocal（线程局部变量）来保存当前线程信息）
+				4：自定义注解，标记读或写。
+			坑：
+				1：SqlSessionFactory不管理数据源的话拿不到数据源
+				2：线程不隔离会导致主从失效，比如从数据库 写
+			开始：：
+				在com.wty.maill.enumeration 创建DataSourceType枚举类
+				在com.wty.maill.config.database下创建 DataBaseContextHolder.java类
+				在com.wty.maill.config.database 创建 MybatisConfiguration类
+				在com.wty.maill.config.database 创建ReadeWriteSplitRoutingDataSource类 （AbstractRoutingDataSource）
+					xml
+						主数据源
+						从数据源
+						SqlSessionFactory(管理主数据源，从数据源)
+						通过Mybatis的AbstractRoutingDatsSource的detemineCurrentLookupKey()来获取当前ThreadLocal里面
+						的数据源标识来进行主从切换
+							setDefaultTargetDataSource(DataSource d)
+							setTargetDataSource(Map<Object,Object> map);
+							交给SqlSessionFactory一个DataSource();
+				在com.wty.maill.annotation 创建 注解 DataSourceCondition
+				在com.wty.maill.interceptor 创建 DataSourceInterceptor.java
+				
+				
+				
+				
+				
+		EMD项目数据库：
+			
+			基础数据表
+				CREATE TABLE `mst_dict` (
+				  `id` varchar(40) NOT NULL AUTO_INCREMENT,
+				  `code` varchar(128) DEFAULT NULL,
+				  `name` varchar(128) DEFAULT NULL,
+				  `status` int(11) DEFAULT NULL,
+				  PRIMARY KEY (`id`)
+				) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+				
+				INSERT INTO `mst_dict` VALUES ('1', 'goodCategory', '物品分类', 1);
+				INSERT INTO `mst_dict` VALUES ('2', 'express', '快递', 1);
+				INSERT INTO `mst_dict` VALUES ('3', 'water', '水', 0);
+				INSERT INTO `mst_dict` VALUES ('4', 'tea', '茶', 0);
+				INSERT INTO `mst_dict` VALUES ('5', 'orange', '橘子', 1);
+				INSERT INTO `mst_dict` VALUES ('6', 'apple', '苹果', 1);
+			
+			分库分表：
+				分库：
+					一个模块的表放在一起
+				分表：
+					水平分表，垂直分表
+						水平分表：（数据太多）
+							一张表10个字段，有1E数据
+							1 3 5 7 9 奇数分到一张表里
+							2 4 6 8 10 偶数分到一张表里
+							按照某种规则，把一张表分成多份
+							增删查改都是按照分表的算法来进行操作的
+							%2 == 0 ，%2 != 0
+						垂直分表：（数据不太多，列太多）
+							一个表里60个字段。
+							查询一个数据，json包装量太大。
+							把字段拆分出去。
+							针对老系统重构
+				
+				在com.wty.maill.mapper创建 接口 BaseMapper.java，继承 Mapper 和 MySqlMapper
+					其他的MapperDao文件可以继承，无需做任何操作了。
+					
+					
+项目概述：
+	1：保证生产者 可靠性投递（允许多投递，不允许少投递）
+	2：保证消费者 唯一性消费（不可能去消费同样的两条消息）
+	3：保证以上两点，就可保证数据最终一致性
+	生产者：
+		状态：status，count，version
+		用户修改密码，发送消息
+		外部触发，内部触发（要把外部的数据信息发送到队列里）
+		可靠性投递（结合数据库）
+			1：把外部数据转换成实体模型，存储到数据库里（status 0 暂存）
+			2：发送消息到消息队列
+				
+				1和2步骤不可能在同一个事务中，永远不要加@Transactional
+				需要标记
+				投递成功 进行3
+				失败了 -> 计数器 count++ -> 状态为 0
+			
+			3：update当前投递消息的状态根据ID修改为（status 1 已发送）
+			
+			
+			
+消费者直接copy  producer一份
+Redis rpush 修改为 lpop
+发送邮件
+消息可靠性投递和幂等性设计与实现
+
+
+
+总结：
+	1：spring boot 基础引用
+		与mybatis整合，实现mariadb主从读写分离
+		
+		整合redis集群、模板引擎、发送邮件 如何编写代码规范
+		
+	2：发送邮件服务
+		
+		在高并发场景下如何去解决数据的一致性***
+		在消费端如何保持消息的准确性
+		
+	3：乐观锁 和 重试机制
+		
+		乐观锁，只要数据发生update，版本号更新+1
+		
+		重试机制：
+			只要生产端发送投递消息，那么重试次数 count + 1
+			
+		
+		
+						
+					
+
+
+				
+			
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		流程：
+			安装虚拟机，两个linux系统下安装mariadb,配置主从关系
+			navicat测试主从复制
+			创建springboot项目，整合mysql，mybatis，durid，springAOP，
+			配置多数据源
+			定义标记枚举
+			线程隔离，ThreadLocal，缓存标记
+			重写AbstractRoutingDataSource的detemineCurrentLookupKey()方法
+			SqlSessionFactory通过AbstractRoutingDataSource管理数据源
+			定义注解，进行方法标记
+			AOP进行线程标记
+			##事务尽量放在主数据源上做
+			jtom
+			rocketMq
+			两阶段提交，都可以实现分布式事务
+			mycat，中间件，做两个库之间数据的汇总
+			
+			虚表
+				create view ？？写一个节点的join sql ？？ 查询view 出来 join
+				
+			物化视图是啥？
+				在数据库磁盘中真实存在的，两张表的一个组合体。两张表的数据存到物化视图的一条记录上。
+				upadate 修改基表 ， 物化视图也会跟着更新（时间间隔更新/oncommit实时更新）
+				查询的时候查物化视图，修改新增基表，数据同步到物化视图
+				不仅可以跨表，也可以跨库
+				状态：
+					永远不更新
+					fast。。。。
