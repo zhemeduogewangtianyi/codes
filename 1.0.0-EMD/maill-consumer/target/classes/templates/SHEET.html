@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${subject}">邮件</title>
+</head>
+<body>
+    <div>
+        <p th:text="${content}"></p>
+        <p>近期我们收到有关您的邮箱发送非索要广告邮件/垃圾邮件的投诉，
+        由于您的不规范发信行为会导致邮箱IP地址存在被国际反垃圾组织列黑的风险，
+        影响同一IP其他所有用户的正常使用。因此非常遗憾地通知您，为了保证您和其他邮箱用户的最大利益，
+        现在我公司已被迫关闭了您邮箱 <b th:text="${messageId}"></b> 的外发服务，该账号接收邮件暂不受影响。</p>
+    </div>
+</body>
+</html>
