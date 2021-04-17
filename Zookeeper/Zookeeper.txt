@@ -1,0 +1,545 @@
+
+zookeeper简介说明
+搭建zookeeper与配置文件说明
+java操作zookeeper
+应用场景实例
+zkClient客户端
+Curator框架
+
+
+
+
+
+zookeeper简介说明
+	
+	1：什么是zookeeper?
+		高效的分布式协调服务，暴漏一些公共服务，比如：命名、配置、管理、同步控制、集群服务等
+		我们可以使用ZK来实现比如：达成共识、集群管理、leader选举等
+	
+		zookeeper是一个高可用的分布式管理与协调框架，基于ZAB算法（原子消息广播协议）的实现。
+		该框架能够很好的保证分布式环境中的数据一致性。基于这样的特性使zookeeper成为了解决分布式一致性问题的利器。
+		
+		顺序一致性：
+				从一个客户端发起的事务请求，最终会严格的按照发起的顺序被应用到zookeeper中。
+				
+		原子性：
+				所有事务请求的处理结果，在整个集群中所有机器上的应用情况是一致的，要么集群所有的机器都成功
+				应用了某一事物，要么都没应用。一定不会出现部分机器应用了事务，而另一部分没有应用的情况。
+			
+		单一视图：
+			无论客户端链接的是哪一个zookeeper服务器，看到的数据模型都是一致的。
+			
+		可靠性：
+			通常所说的实时性就是指一旦事务被成功应用，那么客户端就能立马从服务器上获取变更后的新数据，
+			zookeeper仅仅能保证在一段时间内，客户端最终一定能从服务器端读取最新的数据状态
+			
+
+
+
+
+			
+	2：zookeeper的设计目标：
+		目标1：
+			简单的数据据结构。zookeeper就是以简单的树形结构来进行相互协调的（属性名字空间）
+		
+		目标2：
+			可以构建集群。
+			一般zookeeper集群通常由一组机器构成，一般3~5台机器就可以组成一个zookeeper集群了。只要集群中
+			超过半数以上的机器能够正常工作，那么整个集群就能够正常对外提供服务。
+			
+		目标3：
+			顺序访问。
+				对于每一个来自客户端的请求，zookeeper都会分配一个全局唯一的递增编号，这个编号反映了所有
+				事务操作的先后顺序，应用程序可以使用zookeeper的这个特性来实现更高层次的同步。
+				
+		目标4：
+			高性能。
+				由于zookeeper将全量数据存储在内存中，并直接服务于所有的非事务请求，因此尤其是在读操作作为
+				主场景下的性能非常突出。在JMater压力测试下（100%请求场景下），其结果在12~13W的QPS
+	
+
+
+
+
+
+
+
+
+zokeeper的组成
+	
+		zookeeper根据其身份特征分为三种：leader，follower，Observer
+		一般奇数部署，3 5 7 9
+		其中follower和Observer又统称 learner（学习者）
+		
+		leader：负责客户端的 writer 类型请求
+		Follower：负责客户端的 reader 类型请求，参与leader选举等。
+		Observer（客户端）: 特殊的Follower，其可以接受客户端reader请求，但不参与选举。
+		扩容系统支撑能力，提高读取速度。因为不接受任何同步的写入请求，只负责与leader数据同步
+		
+		
+		ZAB:
+			请求 -> leader （半数存储通过） -> 返回给客户端。
+				集群规模越大，就会有越多的follower从节点进行数据的同步，响应时间越长。
+		
+		
+		
+		
+		
+典型应用场景：
+			zookeeper从设计模式角度来看，是一个基于观察者模式设计的分布式服务管理框架，
+			他负责存储和管理大家都关心的数据，然后接受观察者的注册，一旦这些数据的状态
+			发生变化，zookeeper就将负责通知已经在zookeeper上注册的那些观察者，做出相应
+			的反应，从而实现集群中类似 Master/Slave管理模式
+			
+			配置管理
+			集群管理
+			发布订阅
+			数据库切换
+			分布式日志的收集
+			分布式锁、队列管理
+		
+		1：配置管理：
+			配置的管理在分布式应用环境下很常见，比如我们在平常的应用系统中，经常会碰到这样的需求：机器的配置列表、
+			运行时的开关配置、数据库配置信息等。这些全局配置信息通常具备一下三个特性：
+				1：数据量比较小
+				2：数据内容在运行时动态发生变化
+				3：集群中各个集群共享信息，配置一致。
+				
+		2：集群管理：
+			zookeeper不仅能够帮你维护当前的集群中机器的服务状态，而且能够帮你选出一个总管，
+			让这个总管来管理集群，这就是zookeeper的另一个功能Leader，并且实现集群容错功能。
+			1：希望知道当前集群中究竟有多少机器工作。
+			2：对集群中每天集群运行状态进行数据收集。
+			3：对集群中每台集群进行上下线操作；
+			
+		3：发布与订阅：
+			zookeeper是一个典型的发布、订阅模式的分布式数控管理与协调框架，开发人员可以使用
+			它进行分布式数据中的发布与订阅。
+			
+		4：数据库切换：
+			我们初始化zookeeper的时候读取其节点上的数据库配置文件，当配置一旦发生改变时，zookeeper就能帮助我们
+			把变更的通知发送到各个客户端，每个客户端在接受到这个变更通知后，就可以从新进行最新数据的获取。
+			
+		5：分布式日志收集：我们可以做一个日志系统收集集群中所有日志信息，进行统一管理。
+		
+		6：zookeeper的特性就是在分布式场景下高可用，但是原生的APO实现分布式功能非常困难，团队要去实现也太
+		浪费时间，即使实现了也未必稳定。那么可以采用第三方的客户端完美实现，比如Curator，他是Apache的顶级项目~
+		
+		
+		zookeeper的使用场景非常广泛：
+			如:Hadoop、Storm、消息中间件、RPC服务框架、数据库增量订阅与消费组件（Mysql Binlog）、
+			分布式数据库同步系统，淘宝的Otter。
+			所以zookeeper 。。。。。
+				
+
+
+
+---------------------------------------------------------------------------------------------
+
+
+
+
+				
+zookeeper集群搭建：
+		
+		1:下载zookeeper
+		
+			wget https://mirrors.tuna.tsinghua.edu.cn/apache/zookeeper/zookeeper-3.4.14/zookeeper-3.4.14.tar.gz
+		
+		2:解压：
+			tar -zxvf zookeeper-3.4.14.tar.gz
+			
+		3:重命名：
+			mv zookeeper-3.4.14 zookeeper
+		
+		4:修改环境变量
+			
+			vi /etc/profile
+			
+			ZOOKEEPER=/usr/local/zookeeper/bin
+			export ZOOKEEPER
+			
+		5:刷新：
+			source /etc/profile
+			
+		6:到zookeeper下修改配置文件：
+			cd /usr/local/zookeeper/conf
+			
+			mv zoo_sample.cfg zoo.cfg
+			
+			vi zoo.cfg
+			
+			
+			
+			（1）zookeeper存数据放在哪
+				dataDir=/usr/local/zookeeper/data
+			（2）最后面添加集群地址
+					server.0=192.168.112.140:2888:3888
+					server.1=192.168.112.141:2888:3888
+					server.2=192.168.112.142:2888:3888
+					
+					端口说明：
+
+					1、2181：对cline端提供服务
+
+					2、3888：选举leader使用
+
+					S3、2888：集群内机器通讯使用（Leader监听此端口）
+		
+		7:服务器表示配置：
+			创建文件夹：
+				mkdir /usr/local/zookeeper/data
+			创建文件myid并分别填写内容为0 1 2 ，对应 zoo_sample文件的
+					server.0
+					server.1
+					server.2
+					
+				touth /usr/local/zookeeper/data/myid
+				
+				vi myid		（内容为服务器标识分别为 0 1 2）
+				
+		
+		
+		8:进行复制zookeeper目录到hadoop01和hadoop02 还有 /etc/profile文件
+		把hadoop01、hadoop02、中的myid文件里面的值修改为1和2
+			vi /usr/local/zookeeper/data/myid
+		
+		
+		9:把hadoop01、hadoop02中的myid文件里的值修改为1和2 
+			vi /usr/local/zookeeper/data/myid
+			
+		10:启动zookeeper：
+			路径：
+				/usr/local/zookeeper/bin
+				
+			执行：
+				zkServer.sh start（三台机器都要启动）
+			
+			状态：
+				skServer.sh status（在三个节点上检验zk的mode，一个leader和两个follower）
+		
+	
+	
+			
+			设置从服务器防火墙
+				yum install firewalld firewalld-config				--安装防火墙，如果你没有的话
+				firewall-cmd --permanent --list-port				--查看端口列表
+				firewall-cmd --zone=public --add-port=2181/tcp --permanent	--放开2181端口
+				firewall-cmd --zone=public --remove-port=2181/tcp --permanent	--禁止放开2181端口
+				systemctl status firewalld 或者 firewall-cmd --state			--查看状态
+			重启防火墙
+				systemctl restart firewalld.service
+				
+				
+			
+
+			客户端连接：
+				/usr/local/zookeeper/bin/zkCli.sh -server 192.168.112.140:2181
+				/usr/local/zookeeper/bin/zkCli.sh -server 192.168.112.141:2181
+				/usr/local/zookeeper/bin/zkCli.sh -server 192.168.112.142:2181
+				
+				查找：
+					ls /	ls/zookeeper
+				
+				创建并赋值：
+					create /wty hadoop
+				
+				获取：
+					get /wty
+					
+				设值：
+					set /wty wangtianyi
+					
+				可以看到zookeeper集群的数据一致性
+				
+				rmr /path 递归删除节点
+				
+				delete /path/child 删除指定某个节点
+				
+				退出：
+					quit
+				
+				**创建节点有两种类型：
+					暂存：
+						ephemeral
+					持久：
+						persistent
+		
+		
+		
+		练习：
+			ls /
+			create /wty www.wty.com
+			ls /
+			get wty
+			get /wty
+			set /wty www.baidu.com
+			create /wty aaaa
+			create /wty/age 19
+			ls /wty
+			ls /wty/age
+			get /wty
+			get /wty/age
+			delete /wty/age
+			get /wty/age
+			
+			rmr /wty
+			ls /
+			
+	工具：
+		ZooInspector
+		
+		
+		
+		
+		
+		
+---------------------------------------------------------------------------------------------
+
+
+zookeeper配置文件 zoo.cfg 详解
+
+	tickTime：
+		
+		tickTime=2000
+		基本事件单元，以毫秒为单位。这个时间是作为Zookeeper服务器之间
+		或者客户端与服务器之间维持心跳的时间间隔。每隔tickTime时间就会
+		发送一个心跳
+		
+	dataDir：
+		
+		dataDir=/usr/local/zookeeper/data
+		存储内存中数据库快照的位置，顾名思义就是Zookeeper保存数据的目录，
+		默认情况下，zookeeper将写数据的日志文件也保存在这个目录里。
+		
+	clientPort：
+		
+		clientPort=2181
+		这个端口就是客户端链接zookeeper服务器的端口，zookeeper会监听这个
+		端口，接受客户端的访问请求。
+		
+	initLimit:
+		
+		initLimit=10
+		这个配置项是用来配置zookeeper接受客户端初始化链接时最长能忍受多
+		少个心跳时间间隔数，当已经超过了10个心跳的时间（tickTime）长度后
+		zookeeper服务器还没有收到客户端的返回信息，那么表明这个客户端连接
+		失败！tickTime=2000 -> 总的时间长度也就是 10*2000 = 20秒。
+		
+	**syncLimit：（重点）
+		
+		syncLimit=5
+		这个配置项标识Leader 与 Follower 之间发送消息，请求和应答时间长度，
+		最长不能超过多少个tickTime的时间长度，syncLimit=5 -> 总的时间长度是
+		5 * 2000 = 10秒。
+		
+	server.A=B:C:D :
+	
+		A表示这个是第几号服务器
+		B是这个服务器的ip地址
+		C表示的是这个服务器与集群中的Leader服务器交换信息的端口
+		D表示的是万一集群中的Leader服务器挂了，需要一个端口来重新进行选举，
+		选出一个新的Leader
+		
+		server.0=192.168.112.140:2888:3888
+		server.1=192.168.112.141:2888:3888
+		server.2=192.168.112.142:2888:3888
+		
+		
+		
+		
+		
+		
+		
+---------------------------------------------------------------------------------------------
+		
+java操作zookeeper
+
+	首先要使用java操作zookeeper，zookeeper的javaclient是我们可以更轻松的去对zookeeper进行各种操作，
+	我们引入zookeeper-3.4.14.jar 和 zkclient-0.1.jar就可以了
+	
+	zookeeper-3.4.14.jar作为官方提供的javaAPI，zkclient-0.1.jar则为在原生api基础之上进行扩展的开源java客户端
+	
+	创建会话的方法：
+		客户端可以通过创建一个zookeeper的实例来连接zookeeper服务器
+		
+		Zookeeper（Arguments）方法（一共四个构造方法，根据参数不同）
+		
+		参数说明：
+			connecString：连接服务器列表，以 "," 分割。
+			sessionTimeout：心跳检测时间周期（毫秒）
+			wather：事件处理通知器
+			canBeReadOnly：标识当前会话是否支持只读
+			sessionId 和 sessionPassword：提供连接zookeeper的sessionId和密码，
+			通过这两个确定唯一一台客户端，目的是可以提供重复会话
+			
+		注意：
+			zookeeper客户端和服务器端会话的建立是一个异步的过程，也就是说在程序中，
+			我们程序方法在处理完客户端初始化后立即返回（也就是说程序往下执行代码，这样
+			大多数情况下我们并没有真正构建好一个可用会话，在会话的生命周期处于"CONNECTION"
+			时才算真正建立完毕，所以我们需要使用多线中所学习的一个小工具类）
+			
+			
+	创建节点(znode)方法 ： create
+		
+		提供了两套创建节点的方法，同步和异步创建节点方式。
+		
+		同步方式：
+			
+			参数1：
+				节点路径（名称）：
+					/nodeName （不允许递归创建节点，没有父节点，不让创建子节点）
+			参数2：
+				节点内容：
+					要求类型是字节数组 byte[] ，（不支持序列化方式，如果需要实现序列化，可以
+					使用java相关序列化框架，Hessian，Kryo框架啥的）
+			参数3：
+				节点权限：
+					使用Ids.OPEN_ACL_UNSAFE开放权限即可。（这个参数一般在权限没有太高要求的场景下）
+			参数4：
+				节点类型：
+					创建节点的类型，CreateMode.*，提供四种节点类型
+						PERSISTENT				 - 持久节点
+						PERSISTENT_SEQUENTIAL	 - 持久顺序节点
+						EPHEMERAL				 - 临时节点
+						EPHEMERAL_SEQUENTIAL	 - 临时顺序节点
+						
+						
+		异步方式：（在同步的参数基础上加两个参数）
+		
+			参数5：注册一个异步回调方法，要实现AsynCallBack.StringCallBack接口，重写
+					processResult(int resultCode,String path,Object context,String name)
+					方法，当节点创建完毕后执行此放啊
+					
+					resultCode:
+						服务响应码
+							0 成功
+							-4 端口连接
+							-110 节点存在
+							-112 会话过期
+							
+					oath:
+						接口调用时传入API的数据节点的路径参数
+					
+					context:
+						调用接口传入API的ctx值
+						
+					name:
+						实际在服务器端创建节点的名称
+						
+			参数6：
+				传递给回调函数的参数，一般为上下文（context）信息
+				
+				
+
+	目录结构
+		wty.curator.atomicinteger
+		wty.curator.barrier
+		wty.curator.base
+		wty.curator.cluster
+		wty.curator.discovery
+		wty.curator.distributequeue
+		wty.curator.leader
+		wty.curator.lock
+		wty.curator.test
+		wty.curator.transaction
+		wty.curator.watcher
+		wty.zkClient.base
+		wty.zkClient.watcher
+		wty.zookeeper.auth
+		wty.zookeeper.base
+		wty.zookeeper.cluster
+		wty.zookeeper.watcher
+		
+		
+		
+
+zookeeper状态事件
+	zookeeper有watch事件，是一次性触发的，当watch监视的数据发生变化时，
+	通知设置了该watch的client，即Watcher。
+	
+	同样，其Watcher时监听数据发送了某些变化，那就一定会有对应的事件类型 和 状态类型
+	
+	zk集群某一节点 被 Observer监控了
+		监听人（Observer）叫Watcher，被监听(node)的叫做watch
+		watch是一个动作
+		watcher监听动作的人
+		
+	一次性触发：
+		c1 (Watcher)-> java代码调用zkClient监听了 zk集群的 /wty节点 ，/wty 就一个事件的状态 watch
+		c2 (Watcher) -> 修改了 /wty节点的值  setData("/wty","wtywtywty".getBytes() , -1)
+		zk主动的告诉 c1 -> java端立马就能监听到 ， /wty节点下的值被修改了
+		通过listener进行后续处理
+		Watcher事件消失
+		
+		c3 -> 客户端 setData("/wty","wwww".getBytes(),-1)
+		Watcher就监听不到了
+		
+		反复手动的去修改 watch -> true 就能监听的到
+		
+		watch表示节点的一个状态，是不是被监听？是不是需要被监听
+		Watcher 是我们客户端的一个程序。
+		
+		
+	总结：
+		Watcher的特性：
+		
+			一次性/客户端串行执行、轻量。
+			
+				一次性：
+					zookeeper有watch事件，是一次性触发的，当watch监视的数据发生变化时，通知设置了该watch的client，
+					即Watcher，由于zookeeper的监控都是一次性的，所以每次必须设置监控。
+				
+			客户端串行执行：
+				
+				客户端Watcher回调的过程是一个串行同步的过程，这为我们保证了顺序，
+				同时需要开发人员注意，千万不要因为一个Watcher的处理影响了整个客户端的Watcher回调
+				
+			轻量：
+			
+				WatchedEvent是 Zookeeper整个Watcher通知机制的最小通知单元，
+				整个架构只包含三部分：
+					状态通知、事件类型、节点路径
+				也就是说Watcher通知非常的简单，指挥告诉客户端发生了事件，
+				而不会告知其具体内容，需要客户端自己去进行获取，比如NodeDataChanged事件，
+				Zookeeper指挥通知客户端指定节点的数据发生了更变，而不会
+				直接提供具体的数据内容。
+				实例：
+					ZookeeperWatcher
+		
+		
+	问题：
+		一个znode可以有多个Watcher吗？
+		可以啊。十个都行。。。
+		
+		为什么Watcher不能一直监听？
+			提高性能，减少节点的负担，一次性注册。
+			
+		怎么反复设置？
+		
+			
+			
+			
+	事件类型：(znode节点相关的)
+		EventType.NodeCreated			--节点创建
+		EventType.NodeDataChanged		--节点更改
+		EventType.NodeChildrenChanged	--子节点发生修改
+		EventType.NodeDeleted			--节点删除
+		
+	状态类型：（是跟客户端实例相关的）
+		KeeperState.Disconnected	--连接失败
+		KeeperState.SyncConnected	--连接成功
+		KeeperState.AuthFailed		--认证失败
+		KeeperState.Explred			--过期
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		

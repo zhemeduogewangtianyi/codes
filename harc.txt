@@ -1,0 +1,178 @@
+黑基：http://www.hackhw.com/
+红基：http://www.chinahacker.com/index.asp
+根据 IP 定位：http://chaipip.com/
+教程 -> http://www.hackhw.com/jishu/hk/52693.html
+骗子数据库：https://www.54hacker.com/
+ioc如何实现的：https://blog.csdn.net/zhangyu672090/article/details/82822727
+*网络：http://www.study-area.org/network/network.htm
+子查询咋能不会呢：https://blog.csdn.net/u013634252/article/details/80650850
+沙箱，双亲委派，juc,aqs，volatile,syn,缓存血崩，缓存击穿，秒杀，事务隔离级别，索引
+
+If you can take it, you can make it.
+https://blog.csdn.net/qq_27446553/article/category/3226683/
+one old !!
+https://www.mpgh.net/forum/forumdisplay.php?f=3&page=52&s=9db4fd90bce363c92dff3b69f9c20b66
+
+
+arpspoof -> 到kali用 或者自己装
+phpmyadmin -> 云盘
+kodexplorer -> 公网映射
+dmz主机 直接暴露局域网客户机，通过公网ip访问
+简单的说就是破开wifi，首要的就是拿到root权限，在里面开dmz主机，暴露的主机ip设置为自己服务器的ip
+
+百度相同型号
+
+hack5了解下
+phython脚本
+mt管理器2.0 -》签名 反编译
+打局域网用mdk3 -> 打ap
+
+ddos -> 3389 -》弱密码爆破
+
+c# c java phython
+
+vs 2017
+
+匿名
+ 美国电话实体卡
+或者 171 170号段的电话号码
+
+社工
+
+搜索引擎 duckduckgo
+
+定位谨慎开，勿在公共等地方发个人信息（贴吧，论坛）
+
+软件隐私开起来
+
+隐藏自己的额支付宝姓名，微信等等
+
+不要开启手机号允许被查找
+
+弄到手机号，查号主
+
+户籍 车 档 开房
+
+*鸟叔私房菜
+二进制
+
+
+acr122 -> 卡解密
+变色龙 嗅探卡
+mdk3
+
+
+http://www.fanqiang.com/a5/b1/20011012/0700001439.html
+
+http://www.cx66.com/cxgzs/tips/00837.htm
+
+http://caohua.myetang.com/computer/security/IP-Cheat.html
+
+java锁：
+http://cmsblogs.com/?p=4586
+
+
+shell脚本
+
+GUI
+https://www.youtube.com/watch?v=junyt76BkSw&list=PLA11B442106673455&index=17
+mouseClicked mousePressed mouseReleased mouseEntered mouseExited
+setPreferredScrollableViewwportSize
+
+socket
+https://www.tangyuecan.com/2019/01/11/spring-boot%E9%9B%86%E6%88%90tcp-server/
+https://zhuanlan.zhihu.com/p/56135195
+
+vpn
+https://sphard3.github.io/
+
+linux 225
+
+kali
+
+linux黑武器
+https://www.2cto.com/ebook/201605/63195.html#download
+
+http://www.shiyanbar.com/ctf/beginner
+
+线程：
+	https://my.oschina.net/zhanghaiyang/blog/599563
+synchronized：
+	https://www.jianshu.com/p/d53bf830fa09
+
+
+设计模式：http://c.biancheng.net/design_pattern/
+协议：http://c.biancheng.net/view/2124.html
+spring ： https://www.w3cschool.cn/wkspring/f8pc1hae.html
+
+文章篇幅有限，只对Spring几个重要的知识点进行简单阐述，有兴趣的可以看看《Spring源码深度解析》，该书下载地址：https://pan.baidu.com/s/1jGxdGTg，本文也是基于该书总结出来的。
+
+spEL:https://blog.csdn.net/kksxl/article/details/84691884
+
+fake location 反检测 ： https://www.v2ex.com/t/263867
+
+*#*#2846579#*#*
+
+整理：https://www.jianshu.com/p/35ad594f6163
+
+bat : https://www.cnblogs.com/aspirant/p/7233893.html
+
+dos：https://www.jb51.net/list/list_106_26.htm
+
+ARP：https://www.jb51.net/article/13288.htm
+
+java沙箱：https://www.anquanke.com/post/id/151398
+
+regionBdAccount=grom.dwb
+
+NamedThreadLocal : https://blog.51cto.com/3001448/1205771
+
+行级锁：https://www.cnblogs.com/SUN-PH/p/4155797.html
+
+FlowArrangeHandlerInterceptorAdapter
+
+lucene或solr
+
+运算符：https://www.jczhijia.com/CourseChaptersList/1019.html
+
+linux：安装jdk
+https://www.cnblogs.com/iceb/p/9856931.html
+https://blog.csdn.net/qq_36288025/article/details/82625580
+
+linux:安装mysql
+https://www.jianshu.com/p/3999700a41cd
+
+linux:安装redis
+https://www.jianshu.com/p/f544a8f5398b
+
+
+UML图：
+https://blog.csdn.net/shift_wwx/article/details/79205187
+
+redis：
+https://www.oschina.net/p/jdbc-redis
+
+windows：安装MQ
+https://www.cnblogs.com/cvol/p/8818823.html
+linux：安装MQ
+https://www.jianshu.com/p/fc6859aeb676
+
+https://blog.csdn.net/kuangvquanshui/article/details/78834144
+https://blog.csdn.net/hellozpc/article/details/81436980#4_172
+
+fastdfs:
+https://github.com/happyfish100/fastdfs/wiki
+
+
+cloud:
+https://www.cnblogs.com/ztfjs/p/9230374.html
+https://www.springcloud.cc/spring-cloud-dalston.html#_features
+
+面试：
+https://www.jianshu.com/p/c01eb6e46226
+https://blog.csdn.net/sufu1065/article/details/88051083
+全面：
+https://blog.csdn.net/weixin_43495390/article/details/86533482
+
+项目：
+https://www.sucaihuo.com/video/421

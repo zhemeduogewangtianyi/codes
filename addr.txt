@@ -1,0 +1,90 @@
+﻿尚硅谷 微服务架构2020.pptx
+
+
+上次看到：spring cloud
+https://www.bilibili.com/video/BV18E411x7eT?p=5
+https://www.bilibili.com/video/BV18E411x7eT?p=19
+https://www.bilibili.com/video/BV18E411x7eT?p=23
+
+
+docker
+https://www.bilibili.com/video/BV18b411K7q7?p=2
+
+linux
+https://www.bilibili.com/video/BV1dW411M7xL
+
+java基础：2020年5月10日 - 看到了27
+java基础：2020年5月17日 - 看到了37
+java基础：2020年5月19日 - 看到了41
+https://www.bilibili.com/video/BV18b411K7Lw?from=search&seid=3153803092614694437
+https://www.bilibili.com/video/BV18b411K7Lw?p=41
+
+笔记地址：
+http://blog.cuzz.site/2019/04/16/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/
+
+JUC与JVM：
+https://www.bilibili.com/video/BV1vE411D7KE?from=search&seid=8590808105261601511
+
+JUC简版：
+https://www.bilibili.com/video/BV1c4411w7c7
+
+JUC完整：
+https://www.bilibili.com/video/BV1nE411n7VE
+
+java14：
+https://www.bilibili.com/video/BV1ek4y1d7iy
+
+spring注解驱动：
+https://www.bilibili.com/video/BV114411c7hV?from=search&seid=347757917645671561
+
+
+主
+ssh root@192.168.112.129
+从
+ssh root@192.168.112.130
+Redis
+ssh root@192.168.112.131
+
+整理hibernate相关资料
+
+网络编程：
+https://www.bilibili.com/video/av48367851/?p=1
+
+多线程高并发（已完结）
+https://www.bilibili.com/video/av39499693/?p=27
+
+
+redis（已完结。。）
+https://www.bilibili.com/video/av48371934/?p=28
+
+RabbitMQ
+https://www.bilibili.com/video/av49799767?from=search&seid=7522021925778429653
+https://www.bilibili.com/video/av66612594/?p=11
+
+####看完redis再回来
+https://www.bilibili.com/video/av46875560/?p=40
+
+React
+https://www.bilibili.com/video/av62336147?p=5
+
+nginx
+https://www.bilibili.com/video/av55251610?from=search&seid=13694123336030345352
+
+https://blog.csdn.net/linxingliang/article/details/52566881
+
+白鹤翔全集
+https://search.bilibili.com/all?keyword=%E5%B0%9A%E5%AD%A6%E5%A0%82_%E7%99%BD%E9%B9%A4%E7%BF%94
+
+参考
+http://www.feixueteam.net/thread-1318-1-1.html
+
+
+springBoot
+http://blog.didispace.com/spring-boot-learning-1/
+
+spring cloud alibaba
+https://www.bilibili.com/video/BV18E411x7eT?from=search&seid=6661055717564276214
+
+各大厂面试：
+https://www.bilibili.com/video/BV18b411K7Lw?from=search&seid=3153803092614694437
+
