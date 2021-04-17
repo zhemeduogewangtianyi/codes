@@ -1,0 +1,189 @@
+并发编程中级篇
+
+同步类容器，并发类容器介绍和概念
+ConcurrentHashMap、ConcurrentSkipListMap、CopyOnWriteArrayList、CopyOnWriteArraySet底层实现讲解
+实战队列 Queue 和 双端队列 Deque 讲解 ConcurrentLinkedQueue、ArrayBlockingQueue、LinkedBlockingQueue、
+PriorityBlockingQueue、DelayQueue、SynchonousQueue、LinkedBlockingDeque
+多线程的设计模式、Future模式、Master-Worker模式、生产者-消费者模式；在实际工作中如何应用及其场景描述。
+
+
+
+
+
+同步类容器：
+	
+	同步类容器都是线程安全的，但在某些场景下可能需要加锁来保护复合操作。
+	
+	复合类操作：
+		迭代（反复访问元素，便利婉容其中的所有元素）、跳转（根据指定的顺序找到当前元素的下一个元素）、
+		以及条件运算。这些复合操作在多线程并发的修改容器时，可能会表现出意外的行为，最经典的例子是
+		ConcurrentModificationException -> CME ,原因是当容器迭代的过程中，并发的修改了内容，这是由于早期
+		迭代器设计的时候并没有考虑并发修改问题。。
+		
+	同步类容器：
+		Vector、HashTable。这些容器的同步功能其实都是由JDK的Collections.synchronized***等工厂方法
+		去创建实现的。其底层的机制无非就是用传统的synchronized关键字对每个公用的方法都进行同步，使
+		每次只有一个线程访问容器的状态。这明显不能满足我们今天高并发的需求，在保证线程安全的同时，也
+		必须要有足够好的性能。
+		
+		
+		
+		
+
+并发类容器：
+	
+	jdk1.5以后提供了多种并发类容器来替代容器类容器，从而改善了性能。同步类容器的状态都是串行化的。
+	他们虽然实现了线程安全，但是严重降低了并发性，在多线程环境时，严重降低了应用程序的吞吐量。
+	
+	并发类容器是专门针对并发设计的，使用ConcurrentHashMap来代替给予散列的传统的HashTable，而且在
+	ConcurrentHashMap中，添加了一些创建复合操作的支持。以及使用了CopyOnWriteArrayList代替Vector，
+	并发的CopyonWriteArraySet，以及并发的Queue，ConcurrentLinkedQueue和LinkedBlocingQueue，前者是
+	高性能的队列，后者是阻塞形式的队列，具体体现Queue还有很多，例如ArrayBlockingQueue、PriorityBlockingQueue、
+	SynchronousQueue等。
+	
+	
+
+
+ConcurrentHashMap：
+	
+	ConcurrentHashMap接口下有两个重要的实现：
+		ConcurrentHashMap
+		ConcurrentSkipListMap（支持并发排序功能，弥补了ConcurrentHashMap）
+		
+	ConcurrentHashMap 内部使用段（Segment）来表示这些不同的部分，每个段其实就是一个小的HashTable，
+	他们有自己的锁。只要多个修改操作发生在不同的段上，他们就可以并发进行。把一个整体分成了16个段（Segment）。
+	也就是最高支持16个线程的并发修改操作。这也是在多线程场景时，减小锁的粒度，从而降低锁竞争的一种方案，
+	并且代码中大多共享变量使用volatile关键字声明，目的是第一时间获取修改的内容，性能非常好。
+	
+
+
+
+
+CopyOnWrite容器：
+	
+	CopyOnwrite简称 COW ， 是一种用于程序设计中的优化策略。
+	JDK里的COW容器有两种：
+		CopyOnWriteArrayList 和 CopyOnWriteArraySet，
+		COW容器非常有用，可以在非常多的并发场景中使用到，尤其是并发读的场景下。
+		
+	什么是CopyOnWrite容器？
+		CopyOnWrite容器，即写时复制的容器。通俗理解是，我们在往一个容器添加元素时，
+		不直接往当前容器添加，而是先将当前容器进行Copy，复制出一个新的容器，然后新
+		的容器里面添加元素，添加完元素之后，再将原容器的引用指向新的容器。这样做的
+		好处就是我们可以对CopyOnWrite容器进行并发的读，而不需要加锁，因为当前容器不
+		会添加任何元素。所以CopyOnWrite容器也是一种读写分离的思想，读和写不同的容器。
+
+
+
+
+
+
+并发Queue：
+	
+	在并发队列上JDK提供了两套实现，一个是以ConcurrentLinkedQueue为代表的高性能队列，
+	一个十一BlockingQueue接口为代表的阻塞队列，无论哪种队列，都集成Queue
+
+	Queue
+		AbstractQueue<E>			class
+		AsLIFOQueue<E>				class
+		ConcurrentLinkedQueue<E>	class
+		BlockingQueue<E>			interface
+			ArrayBlockingQueue<E>		class
+			DelayedWorkQueue<E>			class
+			LinkedBlockingQueue<E>		class
+			PriorityBlockingQueue<E>	class
+			SynchronousQueue<E>			class
+			BlockingDeque<E>			interface
+				LinkedBlockingDeque<E>		class
+			TransferQueue<E>			interface
+				LinkedTransferQueue<E>		class
+			Deque					interface
+
+
+
+
+
+ConcurrentLinkedQueue：
+	ConcurrentLinkedQueue：
+		是一个适用于高并发场景下的队列，通过无锁方式，实现了高并发状态下的高性能，
+		通常ConcurrentLinkedQueue性能好于BlockingQueue。它是一个基于链接节点的无界
+		线程安全队列。该队列的元素遵循先进先出的原则。头是最先加入的，尾是最近加入
+		的，该队列不允许null元素。
+		
+	ConcurrentLinkedQueue重要方法：
+		add() 和 offer() 都是加入元素的方法（在ConcurrentLinkedQueue中，这两个方法没有任何区别）
+		poll() 和 peek() 都是取头元素节点，区别在于前者回删除元素，后者不会。
+		
+		
+
+
+
+BlockingQueue接口：（阻塞队列）
+	
+	ArrayBlockingQueue：
+		基于数组的阻塞队列实现，在ArrayBlockingQueue内部，维护了一个定长数组，一边缓存队列中的数据对象，
+		其内部没实现读写分离，意味着生产者和消费者不能完全并行，长度需要定义，可以指定先进先出或者先进后出，
+		也叫有界队列，在很多场合非常适合使用。
+		
+	LinkedBlockingQueue：
+		基于链表的阻塞队列，同ArrayBlockingQueue类似，其内部也维持着一个数据缓冲队列（由链表构成的队列），
+		LinkedBlockingQueue之所以能够高效的处理并发数据，是因为其内部实现采用分离锁（对鞋分离两个锁），从而
+		实现生产者和消费者的完全并行运行。他是一个无界队列。
+		
+		
+	SynchronousQueue：
+		一种没有缓冲的队列，生产者生产的数据直接会被消费者获取并消费。
+		
+	PriorityBlockingQueue：
+		基于优先级的阻塞队列，优先级的判断通过构造函数传入的Comparator对象来决定，传入队列的对象必须实现
+		Comparator接口，在实现PriorityBlockingQueue时，内部控制线程同步的锁采用的是 公平锁，他也是一个无界
+		的队列
+		
+	DelayQueue：
+		带有延迟时间的Queue，其中的元素只有当其指定的延迟时间到了，才能够从队列中获取该元素。DelayQueue中的
+		元素必须实现了Delayed接口，DelayQueue是一个没有大小限制的队列，应用场景很多，比如对缓存超时的数据进行
+		清理、任务超时处理、空闲连接关闭等。
+
+
+
+
+
+Future模式：
+	Future模式有点类似与商品订单。比如在网购时，当看中某一件商品时，就可以提交订单，当订单处理完成后，
+	在家等商品送货上门即可。或者说更形象的，我们发送Ajax请求的时候，页面是异步的进行后台处理，用户无需
+	一致等待请求结果，可以继续浏览或操作其他内容。
+	
+	
+	
+Master-Worker模式：
+	是常用的并行计算模式。它的核心思想是心痛由两类进程协作工作：
+		Master进程和Worker进程。
+		Master负责接受和分配任务，Worker负责处理子任务。
+		当各个Worker子进程处理完成后，会将结果返回给Master，由Master做归纳和总结。其好处是能将一个
+		大任务分解成若干个小任务，并行执行，从而提高系统的吞吐量。
+		
+		
+
+
+生产者-消费者：
+	
+	生产者和消费者也是一个非常经典的多线程模式，我们在实际开发中应用非常广泛的思想。
+	在生产者-消费者模式中：通常有两类线程，若干个生产者的线程和若干个消费者的线程。
+	在生产者线程负责提交用户请求，消费者线程则负责具体处理生产者提交的任务，在生产者
+	和消费者之间通过共享内存缓存区进行通信。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
