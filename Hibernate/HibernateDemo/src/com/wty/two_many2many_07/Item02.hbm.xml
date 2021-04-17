@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="com.wty.two_many2many_07">
+
+    <class name="Item02" table="item02">
+        <id name="id" column="id" type="java.lang.Long">
+            <generator class="native" />
+        </id>
+        <property name="name" column="name" type="java.lang.String"/>
+        
+        <set name="categorys" table="category_item02">
+            <key column="item_id"></key>
+            <many-to-many class="Category02" column="category_id"></many-to-many>
+        </set>
+
+    </class>
+</hibernate-mapping>

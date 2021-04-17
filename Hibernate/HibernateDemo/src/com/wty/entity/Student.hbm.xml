@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="com.wty.entity">
+
+    <class name="Student" table="student" schema="test" select-before-update="true" dynamic-update="true">
+        <id name="id" column="id" type="java.lang.Integer">
+            <generator class="native"></generator>
+            <!--<generator class="native"></generator>-->
+            <!--<generator class="hilo"></generator>-->
+        </id>
+        <property name="username" column="username" type="java.lang.String"/>
+        <property name="password" column="password" type="java.lang.String"/>
+        <property name="createTime" column="create_time" type="java.util.Date"/>
+        <property name="desc" formula="(select concat(username,':',password) from student s where s.id = id)"></property>
+
+    </class>
+</hibernate-mapping>

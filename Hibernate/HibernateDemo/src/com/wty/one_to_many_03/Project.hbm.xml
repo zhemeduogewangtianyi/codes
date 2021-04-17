@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="com.wty.one_to_many_03">
+
+    <class name="Project" table="project">
+        <id name="id" column="id" type="java.lang.Long">
+            <generator class="native" />
+        </id>
+        <property name="projectName" column="project_name" type="java.lang.String"/>
+
+        <set name="industrySet" table="industry" inverse="true" cascade="save-update" order-by="id desc">
+            <key column="project_id"></key>
+            <one-to-many class="Industry"></one-to-many>
+        </set>
+
+        <!--<list name="industrySet" table="industry" inverse="true" cascade="delete">-->
+            <!--<key column="project_id"></key>-->
+            <!--<list-index column="projectinfoid"/>-->
+            <!--<one-to-many class="Industry"></one-to-many>-->
+        <!--</list>-->
+
+    </class>
+</hibernate-mapping>

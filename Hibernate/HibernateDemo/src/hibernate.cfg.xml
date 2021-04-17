@@ -1,0 +1,118 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <property name="connection.url">jdbc:mysql://192.168.112.135:3306/test</property>
+        <property name="connection.driver_class">com.mysql.cj.jdbc.Driver</property>
+        <property name="connection.username">root</property>
+        <property name="connection.password">root</property>
+
+        <property name="hibernate.dialect">org.hibernate.dialect.MariaDBDialect</property>
+
+        <property name="show_sql">true</property>
+        <property name="format_sql">true</property>
+
+        <!--<property name="connection.isolation">2</property>-->
+
+        <property name="hbm2ddl.auto">update</property>
+
+        <property name="hibernate.use_identifier_rollback">true</property>
+
+        <!-- c3p0 -->
+        <property name="hibernate.c3p0.max_size">10</property>
+        <property name="hibernate.c3p0.min_size">5</property>
+        <property name="hibernate.c3p0.timeout">2</property>
+
+        <property name="hibernate.c3p0.max_statements">2000</property>
+        <property name="hibernate.c3p0.idle_test_period">2000</property>
+        <property name="hibernate.c3p0.acquire_increment">10</property>
+
+        <property name="hibernate.jdbc.fetch_size">100</property>
+        <property name="hibernate.jdbc.batch_size">30</property>
+        
+        
+        <!-- 开启二级缓存 -->
+        <property name="hibernate.cache.use_second_level_cache">true</property>
+        <!-- 开启查询缓存 -->
+        <property name="hibernate.cache.use_query_cache">true</property>
+        <!-- EhCache驱动 -->
+        <property name="hibernate.cache.region.factory_class">org.hibernate.cache.ehcache.EhCacheRegionFactory</property>
+
+
+
+
+        <mapping class="com.wty.entity.Student"/>
+        <mapping resource="com/wty/entity/Student.hbm.xml"/>
+
+        <mapping class="com.wty.entity.Worker" />
+        <mapping resource="com/wty/entity/Worker.hbm.xml"/>
+
+        <mapping class="com.wty.many_to_one_02.Consumer"/>
+        <mapping resource="com/wty/many_to_one_02/Consumer.hbm.xml"/>
+
+        <mapping class="com.wty.many_to_one_02.Order"/>
+        <mapping resource="com/wty/many_to_one_02/Order.hbm.xml" />
+
+        <mapping class="com.wty.one_to_many_03.Project" />
+        <mapping resource="com/wty/one_to_many_03/Project.hbm.xml" />
+
+        <mapping class="com.wty.one_to_many_03.Industry" />
+        <mapping resource="com/wty/one_to_many_03/Industry.hbm.xml" />
+
+        <mapping class="com.wty.one2one_foregin_04.People01" />
+        <mapping resource="com/wty/one2one_foregin_04/People01.hbm.xml" />
+
+        <mapping class="com.wty.one2one_foregin_04.IdCard01" />
+        <mapping resource="com/wty/one2one_foregin_04/IdCard01.hbm.xml" />
+
+        <mapping class="com.wty.one2one_primary_05.People02" />
+        <mapping resource="com/wty/one2one_primary_05/People02.hbm.xml" />
+
+        <mapping class="com.wty.one2one_primary_05.IdCard02" />
+        <mapping resource="com/wty/one2one_primary_05/IdCard02.hbm.xml" />
+
+        <mapping class="com.wty.one_many2many_06.Category" />
+        <mapping resource="com/wty/one_many2many_06/Category.hbm.xml" />
+
+        <mapping class="com.wty.one_many2many_06.Item" />
+        <mapping resource="com/wty/one_many2many_06/Item.hbm.xml" />
+
+        <mapping class="com.wty.two_many2many_07.Category02" />
+        <mapping resource="com/wty/two_many2many_07/Category02.hbm.xml" />
+
+        <mapping class="com.wty.two_many2many_07.Item02" />
+        <mapping resource="com/wty/two_many2many_07/Item02.hbm.xml" />
+
+        <mapping class="com.wty.subclass_08.Parent" />
+        <mapping resource="com/wty/subclass_08/Parent.hbm.xml" />
+
+        <mapping class="com.wty.joined_subclass_09.Parent02" />
+        <mapping resource="com/wty/joined_subclass_09/Parent02.hbm.xml" />
+
+        <mapping class="com.wty.union_subclass_10.Parent03" />
+        <mapping resource="com/wty/union_subclass_10/Parent03.hbm.xml" />
+
+
+        <mapping class="com.wty.strategy_11.Consumer02" />
+        <mapping resource="com/wty/strategy_11/Consumer02.hbm.xml" />
+
+        <mapping class="com.wty.strategy_11.Order02" />
+        <mapping resource="com/wty/strategy_11/Order02.hbm.xml" />
+
+        <mapping class="com.wty.hql_12.Department" />
+        <mapping resource="com/wty/hql_12/Department.hbm.xml" />
+
+        <mapping class="com.wty.hql_12.Employee" />
+        <mapping resource="com/wty/hql_12/Employee.hbm.xml" />
+
+
+        <!-- 指定缓存类 -->
+        <class-cache class="com.wty.hql_12.Employee" usage="read-write"></class-cache>
+        
+        <!--<collection-cache collection="com.wty.hql_12.Department.employees" usage="read-write"></collection-cache>-->
+        <!-- DB schema will be updated if needed -->
+        <!-- <property name="hbm2ddl.auto">update</property> -->
+    </session-factory>
+</hibernate-configuration>

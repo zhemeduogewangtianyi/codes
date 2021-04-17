@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="com.wty.subclass_08">
+
+    <!-- 3:指定Parent存储的type -->
+    <class name="Parent" table="parent" discriminator-value="parent">
+        <id name="id" column="id" type="java.lang.Long">
+            <generator class="native" />
+        </id>
+
+        <!-- 2:指定辨别者列 -->
+        <discriminator column="type" type="java.lang.String"></discriminator>
+
+        <property name="name" column="name" type="java.lang.String"/>
+
+        <!-- 1:映射子类Children -->
+        <subclass name="Children" discriminator-value="children"> <!-- 4:指定Children存储的type -->
+            <property name="password" type="java.lang.String" column="password"></property>
+        </subclass>
+
+    </class>
+</hibernate-mapping>

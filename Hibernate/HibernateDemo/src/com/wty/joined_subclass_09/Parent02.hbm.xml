@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="com.wty.joined_subclass_09">
+
+    <class name="Parent02" table="parent02">
+        <id name="id" column="id" type="java.lang.Long">
+            <generator class="native" />
+        </id>
+
+        <property name="name" column="name" type="java.lang.String"/>
+
+        <joined-subclass name="Children02" table="children02">
+            <key column="children_id"></key>
+            <property name="password" type="java.lang.String" column="password"></property>
+        </joined-subclass>
+
+    </class>
+</hibernate-mapping>

@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="com.wty.one_to_many_03">
+
+    <class name="Industry" table="industry">
+        <id name="id" column="id" type="java.lang.Long">
+            <generator class="native" />
+        </id>
+        <property name="industryName" column="industry_name" type="java.lang.String"/>
+
+        <many-to-one name="project" class="Project" column="project_id"></many-to-one>
+
+    </class>
+</hibernate-mapping>

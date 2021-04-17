@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="com.wty.entity">
+
+    <class name="Worker" table="worker" schema="test" select-before-update="false" dynamic-update="true">
+        <id name="id" column="id" type="java.lang.Long">
+            <generator class="native"></generator>
+        </id>
+        <property name="name" column="name" type="java.lang.String"/>
+        <component name="task" class="Task">
+            <parent name="worker" />
+            <property name="one" column="one"></property>
+            <property name="two" column="two"></property>
+        </component>
+
+    </class>
+</hibernate-mapping>

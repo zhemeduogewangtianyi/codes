@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="com.wty.hql_12">
+
+    <class name="Employee" table="employee">
+
+        <!--<cache usage="read-write"></cache>-->
+
+        <id name="id" column="id" type="java.lang.Long">
+            <generator class="native" />
+        </id>
+        <property name="name" column="name" type="java.lang.String"/>
+
+        <property name="email" column="email" type="java.lang.String" />
+
+        <property name="salary" column="salary" type="java.lang.Float"/>
+
+        <many-to-one name="department" class="Department" column="dept_id">
+
+        </many-to-one>
+
+    </class>
+
+    <query name="query">
+        from Employee where salary <![CDATA[<]]> :salary
+    </query>
+</hibernate-mapping>

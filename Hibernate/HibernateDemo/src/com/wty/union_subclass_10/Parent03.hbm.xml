@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE hibernate-mapping PUBLIC
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="com.wty.union_subclass_10">
+
+    <class name="Parent03" table="parent03">
+        <id name="id" column="id" type="java.lang.Long">
+            <generator class="assigned" />
+        </id>
+
+        <property name="name" column="name" type="java.lang.String"/>
+
+        <union-subclass name="Children03" table="children03">
+            <property name="password" column="password" type="java.lang.String"></property>
+        </union-subclass>
+
+    </class>
+</hibernate-mapping>

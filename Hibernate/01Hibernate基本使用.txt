@@ -1,0 +1,2024 @@
+﻿Hibernate
+	共计11节内容
+
+
+什么是Hibernate ?
+
+	一个框架
+		
+		提升效率，简化开发，提高程序健壮性。一句话----省事。
+		直接调用封装好的接口
+	
+	一个Java领域的持久化框架
+		
+		把对象永久的保存到数据库中。
+		
+		增删改查都称之为持久化。
+		
+		加载 - 根据特定的OID，把一个对象从数据库加载到内存。
+			为了在系统中找到所需的对象，需要为一个对象分配一个唯一的标识号。
+			在关系数据库中，成为主键。对象属于中交 对象标识 Object identifier-OID
+		
+	一个ORM框架
+		
+		对象关系映射 - Object Relation Mapping
+		
+		ORM主要解决对象-关系映射。
+		
+		面向对象概念
+			
+			类 对象 属性
+		
+		面向关系概念
+		
+			表 行 字段
+		
+		ORM框架的思想：
+			将关系数据库中表的记录映射成为对象，以对象的形式展现，程序员可以把
+			对数据库的操作转换为对 对象的操作。
+			
+		ORM框架采用 元数据 来描述对象-欢喜映射细节，元数据通常使用xml格式。
+		
+		元数据是啥？
+			用来描述数据的数据。。。
+			主要是描述数据属性（property）的信息，用来支持如指示存储位置、历史数据、资源查找、文件记录等功能
+			
+		并且存放在专门的对象-关系映射文件中。
+		
+		ORM框架分层：
+			
+			业务逻辑层（Java代码）操作的是：
+				对象，属性，继承，多态，关联关系
+			
+			持久化层：（数据库）
+				参照xml文件，获取到我们数据的存放地点，以及能获取啥存放啥。
+				根据xml给出的信息，得到DataSource , Data 映射成实体，提供API获取
+				
+			数据库层：
+				表、字段、索引、主外键。。。
+				
+				
+		优点：
+			非常优秀。。。成熟的ORM框架。
+			完成对象的持久化操作。
+			允许开发者采用面向对象的方式来操作关系型数据库。
+			消除那些针对特定厂商的特定SQL代码。。。
+			
+		与Mybatis区别：
+			Hibernate全自动的ORM持久层框架，Mybatis是个半自动的。
+			灵活性Mybatis高一点，Mybatis前身Ibatis就有了很多的标签，
+			Mybatis进一步发扬光大了。
+			
+			Mybatis开发速度慢。。但是有了插件MybatisGenerator也很好用。
+			但是Hibernate自带光环，本身就能映射数据库。
+			
+			Hibernate会出现懒加载的情况，Mybatis不会。
+			
+			这俩框架都有各自的风格，对JDBC进行了不同的封装，没有谁好谁不好
+			，只有看谁在某些场景更为适用。
+			
+		注意：
+			Hibernate和Mybatis都是对JDBC的封装，也就是说连接数据库都需要数据源。
+			username、password、url jdbc:mysql://127.0.0.1:3306  driver
+			
+			都会去获取连接，获取执行器，获取返回结果。。。
+			只是封装了而已。。
+			
+			
+安装Hibernate
+
+	IDEA -> file -> settings -> Plugin -> 搜Hibernate
+	
+	Data Source -> Mysql -> Host啥的填填。
+	
+
+
+开始我们第一个HelloWorld
+	
+	file -> new -> project -> java 
+	-> 往下翻翻 hibernate 
+	（选择 create default hibernate configuration in project configuration 和 Download） 
+	-> next -> peojectName + 存放位置 -> finish。
+	
+	可以看到IDEA的强大。。。jar都给鼓捣好了。
+	
+	但是这孙子给了oracle的驱动，没给mysql。。。
+	
+	引入jar包，file -> project Structure -> Modules -> Dependencies -> +号 -> JARs or directories... -> 导入jar包
+	
+	四件事情：
+		hibernate配置文件。 hibernate.cfg.xml -> *.cfg.xml
+		创建持久化类。。也就是xxx.java文件，实体类。
+		创建对象关系映射到数据库。
+		Herbernate访问数据库
+		
+	
+	我们现在src 下有了 hibernate.cfg.xml 文件了，脑袋瓜想想先干啥。
+	
+	
+	
+	
+	
+	获取数据源
+	配置
+		url
+		driver_class
+		username
+		password
+		
+	配置数据库方言：
+		dialect 就是说你要用啥数据库。。。org.hibernate.dialect.MySQL*;
+		
+	日志：
+		排错看错的地方。没有等于睁眼瞎。
+		
+		设置show_sql,对sql格式化 format_sql -> true
+		
+	自动生成表，根据你实体上的注解，很省事的一个东西。不过会给你带来坑。
+		
+		hbm2ddl.auto
+		
+	
+	
+	完事了之后我们开始创建包结构。
+		
+		src -> com.wty.entity
+		
+		id ,name , pass , createTime 来几个 ，getter/setter  带参构造、toString()
+		
+	
+	创建对象关系映射文件。
+	
+	CREATE TABLE `student` (
+	  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+	  `username` varchar(32) DEFAULT NULL,
+	  `password` varchar(32) DEFAULT NULL,
+	  `create_time` timestamp NULL DEFAULT NULL,
+	  PRIMARY KEY (`id`)
+	)
+
+	IDEA 连接 DataSource
+	
+	
+	Perssistence -> 右键hibernate.cfg.xml -> Generate Persistence Mapping -> By Database Schema
+	
+	选择数据库 -> package -> 去掉后缀 -> Add to Session Factory -> Generate JPA -> Generate Separate XML -> OK
+	
+	实体类修改下时间。
+	
+	修改 hbm.xml -> 
+
+
+	hibernate.cfg.xml
+		
+		配置映射 Student.hbm.xml
+		如果你有了。。你也看一下。
+		
+		<mapping class="com.wty.entity.Student"/>
+        <mapping resource="com/wty/entity/Student.hbm.xml"/>
+	
+	
+	
+	
+	访问数据库 -> HelloWorld
+	
+	src 下创建 HelloWorld
+	
+		main()
+		
+		获取配置信息、创建SessionFactory、创建Session、开启事务、执行保存操作、提交事务、关闭Session，关闭SessionFactory
+		
+		
+	
+	
+	hibernate实体类，必须要创建一个无参的构造器，
+		hibernate在持久化类的时候调用Constructor.newInstance()方法，通过反射的方式实例化对象
+		带参的对象不是你不行，而是hibernate不行。反射的依据就是hbm.xml文件的class标签的name属性。
+		
+	提供一个标识属性：
+		hbm.xml文件里面的 <generator class="native"></generator>
+		不然的话Session.saveOrUpdate就完蛋了，不知道以哪个字段作为update的where 条件
+		
+	类要有setter/getter方法：
+		不然hibernate获取不到类的私有化属性，底层没有使用反射的setAccessible(true);
+		
+		
+	使用非final类：
+		可以使用final，hibernate底层使用代理的方式操作对象，final类无法被CGLB字节码技术生成代理类。。
+		影响关联的扩展。
+		
+	重写equals 和 hashCode：
+		关联映射的时候会冲突。。。
+		
+		
+	
+	我们在使用Hibernate的时候，不需要继承某些封装好的类，直接用就行，Hibernate是低入侵的设计模式。
+
+实体映射数据表：*.hbm.xml
+
+	<class name="com.wty.entity.Student" table="student" schema="test">
+        <id name="id" column="id" type="java.lang.Long">
+            <generator class="native"></generator>
+        </id>
+        <property name="username" column="username" type="java.lang.String"/>
+        <property name="password" column="password" type="java.lang.String"/>
+        <property name="createTime" column="create_time" type="java.util.Date"/>
+    </class>
+
+
+
+
+	<hibernate-configuration>
+    <session-factory>
+        <property name="connection.url">jdbc:mysql://192.168.112.135:3306/test</property>
+        <property name="connection.driver_class">com.mysql.jdbc.Driver</property>
+        <property name="connection.username">root</property>
+        <property name="connection.password">root</property>
+
+        <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+
+        <property name="show_sql">true</property>
+        <property name="format_sql">true</property>
+
+        <property name="hbm2ddl.auto">update</property>
+
+        <mapping class="com.wty.entity.Student"/>
+        <mapping resource="com/wty/entity/Student.hbm.xml"/>
+        <!-- DB schema will be updated if needed -->
+        <!-- <property name="hbm2ddl.auto">update</property> -->
+    </session-factory>
+</hibernate-configuration>
+
+hbm2ddl.auto --	
+	帮助我们生成数据库数据的。慎用。。但是你了解了反而能帮你应付某些场景。
+																	------ wty
+	
+	validate                加载hibernate时，验证创建数据库表结构
+	create                  每次加载hibernate，重新创建数据库表结构，这就是导致数据库表数据丢失的原因。
+	create-drop        		加载hibernate时创建，退出是删除表结构
+	update                  加载hibernate自动更新数据库结构 (最常用的)
+	none					不做任何操作 （找不到表的异常）
+	
+	
+	
+
+Configuration类 - 
+	
+	配置类：配置信息总和
+	
+	可以获取 DataSource 包括数据库连接池啥的，主要是读取了hibernate.cfg.xml
+	
+	怎么创建？
+	
+	--属性文件：
+		Configuration configuration = new Configuration()
+		
+	--Xml文件：
+		 Configuration configuration = new Configuration().configure();
+		 
+	--指定路径
+		Configuration configuration = new Configuration().configure(File file);
+		
+	
+		
+		
+
+SessionFactory接口 --
+
+	线程安全的Session工厂。
+	构造非常消耗资源，一般项目里面保证构造一次就好了。
+	内包含了配置信息。configuration.buildSessionFactory();
+	
+	Hibernate4新增了一个ServiceRegistry接口，所有的Hibernate的配置或者服务都必须统一向ServiceRegistry注册才生效。
+	
+	Configuration configuration = new Configuration().configure();
+
+	configuration.addClass(Student.class);
+
+	StandardServiceRegistry build = new StandardServiceRegistryBuilder().applySettings(configuration.getProperties()).build();
+
+	configuration.buildSessionFactory(build);
+	
+	
+	
+Session接口 --
+	
+	Session接口时应用程序与数据库交互操作的一个单线程对象，是Hibernate的运作中心。增删改查都找它。
+	生命周期很短 -- 后面会详细讲。Session对象有一个一级缓存，显示执行flush之前，所有的持久层操作数据都在session对象。
+	相当对JDBC里面的Connection进行了包装。。
+	
+	常用的方法：
+		get() load()
+		save() update() saveOrUpdate() delete()
+		beginTransaction()
+		isOpen() flush() clear() evict() close()
+		
+			
+
+Transaction --
+
+	代表一次原子操作，具备数据库事务概念 原子性，一致性，持久性，隔离性
+	
+	commit()
+	
+	rollback();
+	
+	wasCommitted() -- 检查是否提交了事务
+	
+	
+
+
+
+
+通过Session操纵对象
+
+	Session接口是Hibernate向应用程序提供的操作数据对象的接口，增，改，删，加载。
+	
+	Session具有一个缓存（后面还有二级缓存），位于缓存中的对象称为持久化对象，它和数据库中的相关记录对应。
+	Session能够在某些时间点，按照缓存中的变化来执行相关的SQL语句，来同步更新数据库，
+	这一过程称为刷新缓存，flush
+	
+	生命周期来看：
+		Session被Hibernate分了四个状态：
+			临时状态 （瞬时状态 Transient）
+			持久化状态 (persistent)
+			游离状态 (脱管状态 detached)
+			删除状态 (移除状态 removed)
+			Session的特定方法能使对象从一个状态转换到另一个状态。
+			
+			
+			
+			
+			
+Session的缓存：
+
+	Session接口的实现中包含了一系列的java集合，这些java集合构成了Session缓存，只要Session实例没有结束
+	生命周期，存放在缓存中的对象也不会结束声明周期
+	
+	Session 缓存可减少Hibernate应用程序访问数据库的频率。
+	
+	Session session = sessionFactory.openSession();
+	Transaction transaction = session.beginTransaction();
+	
+	Student stu = session.get(Student.class,1);
+	
+	Student stu1 = session.get(Student.class,1);
+	
+	transaction.commit();
+	
+	session.close();
+	
+	Student 对象 有两个引用。在同一个Session的范围内，第一次查询数据库，第二次查询缓存。
+	前提是session 没有被关闭又获取。或者是缓存没有被清理才行。
+	
+	一级缓存 Session 级别。二级缓存SessionFactory级别的。（后面会讲）
+	
+
+
+
+
+操作Session的缓存：
+
+	session.flush(); 
+		
+		1：transaction.commit();会触发flush，再提交事务。
+		2：假如查询出的数据，重新set了值，数据库与缓存不一致。。强制修改数据库与缓存一致。。
+		3：flush() 有事务的前提下，会发给你一个update语句，并且修改数据库值，没有事务就不发update语句；
+		
+		例外：
+			1：执行HQL和QBC查询就会触发flush;（后面会讲到），保证获取到最新的查询数据，因为在同一个session下。
+			2：若记录的ID是 -- 底层数据库使用自增 --的方式生成的，则在调用save方法后就会立即发送一个insert语句，因为
+			save方法后必须保证对象的ID是存在的，若 <generator class="native"></generator> 会先查询一个id，并修改。
+	
+	session.refresh();
+		
+		强制发出一条select 语句，即使Session缓存中的状态和数据表中对应的记录保持一致！
+		
+		假如说我查到了数据，然后去修改数据库，回来放开session.refresh()的断点。发现查询到的数据还是老数据。
+		这是由于mysql数据库事务隔离机制的原因。
+		
+		
+	session.clear();
+		
+		清理缓存：
+			
+
+
+
+
+数据库的隔离级别：
+
+	对于同时运行的多个事务，当这些事务访问数据库中相同数据时，如果没有采取必要的隔离机制，就会导致并发。
+	
+	-脏读：
+		A B 两个事务，A读取到B更新的数据，B回滚了。。。。。A拿到的数据是脏数据。
+		
+	-不可重复读：
+		A B 两个事务，A读取了一个字段 name ， B 修改了name ，A 又进行查询，name变了。。。
+		
+	-幻读：
+		A B 两个事务，A从表读了 id name 字段，B在表中插入了 password字段，A 再次获取 发现三个字段了。
+		
+	数据库事务的隔离性：
+		
+		数据库系统必须是具有隔离并发运行各个事务的能力，不能一个事务内，读到两个不同的数据。要做到不会互相
+		影响，避免并发问题。
+		
+		一个事务与其他事务隔离的程度 -> 隔离级别；数据库规定了多种事务隔离级别，不同隔离级别对应不同的干扰程度，
+		隔离级别越高，数据一致性越强，但并发性能变弱，效率变低。
+		
+	数据库提供的四种隔离机制：
+		
+		读未提交数据：READ UNCOMMITED -
+			
+			允许事务读取被其他的提交变更，脏读，不可重复读，幻读 全出现；
+			
+		读已提交数据：READ COMMIT -
+		
+			只允许事务读已经被其他事务提交了的数据，在这个事务持续期间，禁止其他事务对这个字段进行更新，
+			可以避免脏读，幻读，不可重复读。
+			
+		可重复读：REPEATABLE READ -
+			
+			确保事务可以多次从一个字段中读出相同的值，在这个事务持续期间，禁止其他事务对这个字段进行更新，
+			可以避免脏读和不可重复度，幻读问题存在
+			
+		串行化 SERIALIZABLE -
+		
+			确保事务可以从一个表中读相同的行，在这个事务持续期间，禁止其他事务对该表执行插入，更新和删除操作，
+			所有并发问题都可以解决，但是效率低下。
+			
+		
+		Oracle支持两种事务隔离级别：
+			READ COMMIT
+			SERIALIZABLE
+			默认：READ COMMIT
+			
+		MySQL支持四种事务隔离级别：
+			默认为：REPEATABLE READ
+			
+			
+			
+
+在MySQL中修改隔离级别：
+	
+	每启动一个mysql程序，就会获得一个单独的数据库连接，每个数据库连接都有一个全局变量 @@tx_isolation，
+	标识当前的事务隔离级别。MySQL默认的事务隔离级别是REPEATABLE READ
+	
+	查看当前隔离级别：
+		select @@tx_isolation;
+	
+	设置当前隔离级别：
+		set transaction isolation level read committed;
+		
+	设置数据库系统全局的隔离级别：
+		set global transaction isolation level read committed;
+		
+		
+
+
+在Hibernate中设置隔离级别：
+	
+	JDBC数据库连接使用数据库系统默认的隔离级别，在Hibernate的配置文件中可以显示的设置隔离级别。
+	每一个隔离级都对应一个整数：
+	
+		1 READ UNCOMMITED
+		2 READ COMMOTED
+		3 REPEATABLE READ
+		4 SERIALIZEABLE
+		
+	Hibernate通过 Hibernate映射文件指定 hibernate.connection.isolation 属性来设置事务隔离级别；
+		
+		<property name="connection.isolation">2</property>
+		
+	
+再次测试 OperatorSessionCache03.testRefresh()
+	
+	打印两遍 select SQL
+	
+	
+	
+	
+	
+
+
+
+持久化对象的状态：
+
+	站在持久化的角度，Hibernate把对象分了四种状态：
+		临时状态、持久化状态、游离状态，删除状态
+		
+	Session特定的方法能使对象从一个状态转换到另一个状态。
+	
+	
+	临时状态对象（瞬时状态）Transient
+		
+		-在使用代理主键的情况下，OID（ObjectID）为 null
+		-不处于Session的缓存中。
+		-在数据库中没有对应的记录。
+		
+	持久化对象（Persistent）
+		
+		-OID（ObjectID）不为 null
+		-位于Session缓存中。
+		-若在数据库中已经有和其对应的记录，持久化对象和数据库中的相关记录对应。
+		
+		-Session在flush() 缓存时，会根据持久化对象的属性变化，来同步更新数据库。
+		-在同一个Session实例的缓存中，数据库表中的每条记录只对应唯一的持久化对象。
+		
+	
+	
+	
+	-游离对象（Datached）:
+	
+		-OID 不为 null
+		-不再处于Session缓存中
+		-一般情况下，游离对象是由持久化对象转变过来的，因此在数据库中可能还存在与它对应的记录。
+	
+	-删除状态对象（Removed）:
+	
+		-在数据库中没有和其OID对应的记录
+		-不再处于Session缓存中
+		-一般情况下，应用程序不该再使用被删除的对象。
+		
+		
+		
+	***对象状态转换举例：
+	
+		Session session = factory.openSession();
+		Transaction transaction = session.beginTransaction();
+	
+	---------------------------------------------
+		
+		Student stu = new Student();
+		stu.setUsername("wty")
+		stu。setPassword("123");
+		
+	---------------------------------------------	临时状态 transient
+		
+		session.save(stu);
+		或者
+		seesion.saveOrUpdate(stu);
+		或者
+		seesion.persist(stu);
+		或者
+		seesion.merge(stu);
+		
+		//这个也是一个持久化状态对象
+		Student stu1 = session.get(Student.class,1)
+		Student stu2 = session.load(Student.class,1)
+		
+	---------------------------------------------- 持久化状态 persist
+	
+	
+		session.close();
+		session.clear();
+		session.evict();
+		
+		//这一步依然可以把Student对象变为持久化对象。
+		session = factory.openSession();
+		session.save(stu);
+		
+	---------------------------------------------- 游离状态 datached
+	
+	
+		session.delete(stu);
+	
+	---------------------------------------------- 删除状态 removed
+		
+
+		System.gc();	垃圾回收 Student
+
+
+
+
+Session的 save() 方法
+
+	Session的save()方法使一个临时对象转变为持久化对象
+	
+	Session 的 save() 方法完成以下操作
+	
+		-把 News 对象加入到 Session缓存中，使它进入持久化状态。
+		-选用映射文件指定的标识符生成器，为持久化对象分配唯一的OID。
+		
+		在使用代理主键的情况下，setId() 方法为News 对象设置OIS是无效的
+		
+		-计划执行一条insert语句：在flush缓存的时候
+		
+		
+	Hibernate通过持久化对象的OID来维持它和数据库相关记录对应关系，当News对象处于持久化状态时，不允许程序
+	随意修改它的ID。
+	
+	persist() 和 save() 区别：
+		
+		当对一个OID不为null的对象执行save()方法时，会把该对象以一个新的OID保存到数据库；但执行persist()方法
+		会抛出一个异常。
+	
+	load() 和 get() 的区别？
+	
+         当查询一个id不存在的数据时，load抛异常，get 返回  null
+         load会延迟加载
+         get查一级缓存，没有查二级缓存，没有查数据库
+         load查一级缓存，查不到就创建代理，实际getXXX时，才会去查询二级缓存和数据库
+         load方法可能会抛出懒加载异常
+         
+
+
+Session的update方法：
+	
+	Session的 update() 方法使一个游离对象转换为持久化对象，并且计划执行一条update语句。
+	
+	若希望Session仅当修改了Student对象时，才执行update 语句，可以把映射文件中的<class>标签
+	的 select-before-update属性 设为 true , 该属性的默认值为false
+	
+	当update() 方法关联一个有利对象时，如果在Session的缓存中已经存在相同ODI的持久化对象，会抛出异常。
+	
+	当update() 方法关联一个游离对象时，如果在数据库中不存在相应的记录，也会抛出异常。
+	
+	
+	1：查询到数据，修改实体，在有事务的情况下，事务提交会执行 flush操作，把缓存的数据和数据库进行同步，
+	会自动update,所以说session.update可以不写，但是写了不报错。
+	
+	2:查询到数据，事务提交，session关闭，再次获得session、开器事务，修改student 的值，是不会去修改数据库的。
+      但是用了update就可以修改。
+      更新一个游离对象，需要主动调用update才行
+	  
+	3：游离对象哪怕没发生数据变化，也会去更新。
+	
+	4：如何不让update盲目的去发送update语句？
+		在hbm.xml文件 的 <class> 标签 设置一个属性 select-before-update=true
+		一般不需要设置。
+		
+	5：如果update了数据库不存在的数据会报错。
+	
+	6：Session缓存中已经有了一个对象，这时候这个Session就不能去操作另外一个游离对象.OID相同的两个对象，
+	不能同时在缓存里；
+	
+	
+	
+	
+
+Session的 saveOrUpdate() 方法：
+
+	Session 的 saveOrUpdate() 方法同时包含了save() 与 update() 方法的功能
+	
+								Student
+			游离对象 update					临时对象save
+
+	判定对象为临时对象的标准
+		-Java对象的OID为空。
+		-映射文件中 <id> 设置了 unsaved-value 属性，并且 Java对象的 OID 取值 与这个 unsaved-value 值匹配
+
+
+	注意：
+		1：若 OID 不为 null，但是数据库中还没有相应的记录，会抛异常
+		2：了解： OID的值等于id 的 unsaved-value 属性值的对象，也被认为是一个游离对象。
+		
+		
+		
+		
+Session的merge()方法：（JPA持久层框架的时候见。。。。）
+
+	Student 游离状态：
+		1：Session缓存中是否存在OID为 stu.getId()的持久化对象
+		2：不存在 -> 创建一个新的Student对象，把Student的属性copy到新建的Student对象中，
+			持久化新的Student对象，计划执行一条 insert语句。
+		3：存在 -> 从数据库加载ID为1的Student持久化对象。把游离状态Student对象的属性值copy到
+			持久化Student持久化对象中，计划执行一个update语句。
+		4：返回Student持久化对象的引用。
+		
+	Student 临时状态对象：
+		1：创建一个新的Student对象，把Student的属性copy到新建的Student对象中，
+			持久化新的Student对象，计划执行一条 insert语句。
+		2：返回Student持久化对象的引用。
+		
+	
+
+
+
+Session的delete方法：
+
+	Session的delete() 方法既可以删除一个游离对象，也可以删除一个持久化对象。
+	
+	Session的delete()方法处理过程：
+		-计划执行一条delete 语句。
+		-把对象从 Session 缓存中删除，该对象进入删除状态。
+		
+	Hibernate的 cfg.xml 配置文件中有一个
+		hibernate.use_identifier_rollback 属性，其默认值是false，若把它设置为true,
+		将改变 delete() 的运行行为，delte() 方法会把持久化对象或游离对象的OID设置为null,
+		是他们变成临时对象。
+		
+	1:只要OID和数据库中的一条记录对应，就删除。
+	2:如果OID 在数据表中没有对应记录，抛出异常
+	3:可以通过设置hibernate的 hibernate.use_identifier_rollback 属性 为 true,是删除对象后，把OID置为 null
+	
+	
+	
+Session 的 evict() 方法：
+	
+	从Session缓存中把指定的持久化对象移除。
+	
+	
+	再看 对象状态转换举例 。
+	
+	
+
+
+
+
+通过Hibernate调用存储过程
+
+	Work接口：
+		直接通过JDBC API 来访问数据库操作
+	
+
+	Session的 doWork(Work) 方法用于执行Work对象指定的操作，即调用 Work对象的execute() 方法。
+	
+	Session会把当前的数据库连接传递给execute()方法
+	
+	
+	
+	
+	
+
+Hibernate与触发器协同工作：
+
+	Hibernate与数据库中的触发器协同工作时，会造成两类问题
+	
+		-触发器使Session的缓存中的持久化对象与数据库中对应的数据不一致
+			触发器运行在数据库中，它执行的操作对Session是透明的
+			
+		-Session 的 update() 方法盲目地激发触发器：
+			无论有利对象的属性是否发生变化，都会执行update语句，而update语句会
+			激发数据库中相应的触发器
+			
+	解决方案：
+	
+		-在执行完Session的相关操作后，立即调用Session的 flush() 和 refresh() 方法，
+		迫使Session的缓存与数据库同步（refresh() 方法重新从数据库中加载对象）
+		
+		-在映射文件的<class>标签 设置 select-before-update 属性：
+			当Session的update()或saveOrUpdate() 方法更新一个游离对象时，会先执行
+			select 语句，获得当前有利对象在数据库中的最新数据，只有在不一致的情况
+			下才会执行update 语句，
+	
+	
+	
+	
+
+Hibernate的配置文件：
+
+	hibernate.cfg.xml
+	
+		两部分信息：
+			连接信息
+			配置信息
+			
+	hibernate配置文件的作用：
+		
+		1：Hibernate 配置文件主要用于配置数据库连接和Hibernate运行时所需的公众属性。
+		2：每个Hibernate配置文件的对应一个Configuration对象。
+		3：Hibernate配置文件可以有两种格式
+			-hibernate.properties
+			-hibernate.cfg.xml
+			
+	
+hibernate.cfg.xml的常用属性：
+
+	JDBC连接属性：
+		-connection.url
+		-connection.username
+		-connection.password
+		-connection.driver_class
+		-dialect
+		
+	C3P0数据库连接池属性：
+		-hibernate.c3p0.max_size: 最大连接个数
+		-hibernate.c3p0.min_size: 最小连接个数
+		-hibernate.c3p0.timeout: 对象在多久没有连接，被销毁
+		-hibernate.c3p0.max_statements: 缓存Statement对象的数量
+		-hibernate.c3p0.idle_test_period: 连接池检测线程多久检测一次。
+		-hibernate.c3p0.acquire_increment:当数据库连接池连接耗尽，同一时刻获取多少个数据库连接
+		
+		
+如何在Hibernate中使用C3P0:
+	
+	1:jar包
+	
+	2：配置
+	
+		hibernate.cfg.xml 加入以下属性
+		
+		hibernate.c3p0.max_size: 最大连接个数
+		hibernate.c3p0.min_size: 最小连接个数
+		hibernate.c3p0.timeout: 对象在多久没有连接，被销毁
+		hibernate.c3p0.max_statements: 缓存Statement对象的数量
+		hibernate.c3p0.idle_test_period: 连接池检测线程多久检测一次。
+		hibernate.c3p0.acquire_increment:当数据库连接池连接耗尽，同一时刻获取多少个数据库连接
+	
+	3：测试
+		
+		SessionStatus04.doWork()运行下，看连接是否为c3p0
+		
+			com.mchange.v2.c3p0.impl.NewProxyConnection@53a84ff4 [wrapping: com.mysql.cj.jdbc.ConnectionImpl@1235b113]
+	
+	
+	其他的一些常用属性：
+		show_sql：是否将运行期生成的SQL输出到日志以供调试。取值 true | false 
+		format_sql：是否将 SQL 转化为格式良好的 SQL . 取值 true | false
+		hbm2ddl.auto：在启动和停止时自动地创建，更新或删除数据库模式。
+					  取值 create | update | create-drop | validate
+		hibernate.jdbc.fetch_size
+		hibernate.jdbc.batch_size
+		
+	
+	hibernate.jdbc.fetch_size：
+		读取数据库的时候每次读多少条。。。一般都有分页限定。。。谁会傻啦吧唧的读10000条数据出来。。。Mysql无效。。
+		但是需要了解以下，万一高吞吐量系统的。。你也得用。
+		实质是调用 Statement.setFetchSize() 方法
+		设定 JDBC 的 Statement 读取数据的时候每次从数据库中取出的记录条数。
+		例如一次查询1万条记录，对于Oracle的JDBC驱动来说，是不会 1 次性把1万条取出来的，
+		而只会取出 fetchSize 条数，当结果集遍历完了这些记录以后，再去数据库取 fetchSize 条数据。
+		因此大大节省了无谓的内存消耗。
+			Fetch Size设的越大，读数据库的次数越少，速度越快；
+			Fetch Size越小，读数据库的次数越多，速度越慢。
+			Oracle数据库的JDBC驱动默认的Fetch Size = 10，是一个保守的设定，
+			根据测试，当Fetch Size=50时，性能会提升1倍之多，
+			当 fetchSize=100，性能还能继续提升20%，Fetch Size继续增大，性能提升的就不显著了。
+			并不是所有的数据库都支持Fetch Size特性，例如MySQL就不支持
+			
+	hibernate.jdbc.batch_size：
+		这玩意使批量操作数据库的时候，每一批多大。。。。
+		设定对数据库进行批量删除，批量更新和批量插入的时候的批次大小，
+		类似于设置缓冲区大小的意思。batchSize 越大，批量操作时向数据库发送sql的次数越少，速度就越快。
+
+	测试结果是当Batch Size=0的时候，使用Hibernate对Oracle数据库删除1万条记录需要25秒，
+	Batch Size = 50的时候，删除仅仅需要5秒！Oracle数据库 batchSize=30 的时候比较合适。
+
+	
+	
+
+
+对象关系映射文件：
+	
+	映射文件的扩展名为 .hbm.xml
+		Student.hbm.xml
+		hbm -> hibernate mapping 别一问不知道。。
+	
+	POJO 类和关系数据库之间的映射可以用一个XML文档来定义。
+
+	通过 POJO 类的数据库映射文件，Hibernate可以理解持久化类和数据表之间的对应关系，
+	也可以理解持久化类属性与数据库表列之间的对应关系。
+	
+	在运行时 Hibernate 将根据这个映射文件来生成各种 SQL 语句。
+	
+	
+
+映射文件说明：
+
+	-类层次：class 
+		主键：id
+		基本类型：property
+		实体引用类型：many-to-one | one-to-one
+		集合：set | list | map | array
+			one-to-many
+			many-to-many
+		子类：subclass | joined-subclass
+		其他：compnent | any 等
+	
+	-查询语句：query（用来放置查询语句，便于对数据库查询的统一管理和优化）
+	
+	每个Hibernate-mapping中可以同时定义多个类<class>，但更推荐为每个类都创建一个单独的映射文件。
+	
+	
+	
+<hibernate-mapping>标签属性说明：
+
+	hibernate-mapping 是 hibernate 映射文件的根元素
+		
+		schema: 
+			指定所映射的数据库schema的名称。若指定该属性, 则表明会自动添加该 schema 前缀
+		catalog:
+			指定所映射的数据库catalog的名称。  
+		
+		*default-cascade(默认为 none): 设置hibernate默认的级联风格. 若配置 Java 属性, 
+				集合映射时没有指定 cascade 属性, 则 Hibernate 将采用此处指定的级联风格.   
+		*default-access (默认为 property): 
+			指定 Hibernate 的默认的属性访问策略。默认值为 property, 即使用 getter, setter
+			方法来访问属性. 若指定 access, 则 Hibernate 会忽略 getter/setter 方法, 而通过
+			反射访问成员变量.
+		*default-lazy(默认为 true): 
+			设置 Hibernat morning的延迟加载策略. 该属性的默认值为 true, 即启用延迟加载策略. 
+			若配置 Java 属性映射, 集合映射时没有指定 lazy 属性, 则 Hibernate 将采用此处指定的延迟加载策略 
+		
+		auto-import (默认为 true): 
+			指定是否可以在查询语言中使用非全限定的类名（仅限于本映射文件中的类）。 
+		
+		**package (可选): 
+			指定一个包前缀，如果在映射文档中没有指定全限定的类名， 就使用这个作为包名。 
+
+
+		我们暂时先只说一个package属性。。。其余的后面说
+		
+		
+		
+
+<class> 标签说明：
+
+	class 元素用于指定类和表的映射
+		**name:指定该持久化类映射的持久化类的类名
+		
+		**table:指定该持久化类映射的表名, Hibernate 默认以持久化类的类名作为表名
+		
+		**dynamic-insert: 动态插入，若设置为 true, 表示当保存一个对象时, 会动态生成 insert 语句, 
+			insert 语句中仅包含所有取值不为 null 的字段. 默认值为 false
+		
+		**dynamic-update: 动态更新。若设置为 true, 表示当更新一个对象时, 会动态生成 update 语句,
+			update 语句中仅包含所有取值需要更新的字段. 默认值为 false
+		
+		**select-before-update:设置 Hibernate 在更新某个持久化对象之前是否需要先执行一次查询. 默认值为 false
+			这个设置为true会每次更新发出一个select ，尽量别设置。
+		
+		*batch-size:指定根据 OID 来抓取实例时每批抓取的实例数.
+		
+		*lazy: 指定是否使用延迟加载.  
+		
+		*mutable: 若设置为 true, 等价于所有的 <property> 元素的 update 属性为 false, 
+			表示整个实例不能被更新. 默认为 true. 
+		
+		*discriminator-value: 指定区分不同子类的值. 当使用 <subclass/> 元素来定义持久化类的继承关系时
+			需要使用该属性
+
+
+
+
+映射对象标识符：
+	
+	Hibernate 使用对象标识符(OID) 来建立内存中的对象和数据库表中记录的对应关系. 
+	对象的 OID 和数据表的主键对应. Hibernate 通过标识符生成器来为主键赋值
+	
+	Hibernate 推荐在数据表中使用代理主键, 即不具备业务含义的字段. 代理主键通常为整数类型, 
+	因为整数类型比字符串类型要节省更多的数据库空间.在对象-关系映射文件中, <id> 元素用来设
+	置对象标识符. <generator> 子元素用来设定标识符生成器.
+	
+	Hibernate 提供了标识符生成器接口: IdentifierGenerator, 并提供了各种内置实现
+	
+	
+
+
+<id>标签：
+	
+	id：设定持久化类的 OID 和表的主键的映射
+	
+	name: 
+		标识持久化类 OID 的属性名  
+
+	column: 
+		设置标识属性所映射的数据表的列名(主键字段的名字). 
+
+	unsaved-value:
+		若设定了该属性, Hibernate 会通过比较持久化类的 OID 值和
+		该属性值来区分当前持久化类的对象是否为临时对象
+
+	type:
+		指定 Hibernate 映射类型. Hibernate 映射类型是 Java 类型与
+		SQL 类型的桥梁. 如果没有为某个属性显式设定映射类型, Hibernate 
+		会运用反射机制先识别出持久化类的特定属性的 Java 类型, 然后自动
+		使用与之对应的默认的 Hibernate 映射类型
+
+	Java 的基本数据类型和包装类型对应相同的 Hibernate 映射类型. 
+	基本数据类型无法表达 null, 所以对于持久化类的 OID 推荐使用包装类型
+	
+
+
+
+<generator>标签说明：
+	
+	generator：设定持久化类设定标识符生成器
+	
+	class: 指定使用的标识符生成器全限定类名或其缩写名
+	
+	hibernate内置的主键生成器：
+		
+		increment:
+			适用于代理主键，由Hibernate自动以递增方式生成。
+			
+		identity:
+			适用于代理主键。由底层数据库生成标识符。
+			
+		sequence:
+			适用于代理主键。Hibernate根据底层数据库的序列生成标识符，这要求底层数据库支持序列。
+			
+		hilo:
+			适用于代理主键。Hibernate分局high/low算法生成标识符。
+			
+		sequhilo:
+			适用于代理主键。使用一个高/低位算法来高效的生成long,short,int 类型的标识符。
+			
+		native :
+			适用于代理主键。根据底层数据库对自动生成标识的方式，自动选择identity、sequence 或者 hilo
+			
+		uuid.hex:
+			适用于代理主键。Hibernate采用128位UUID的算法生成标识符。
+			
+		uuid.string:
+			适用于代理主键。UUID被编码成一个16字符长的字符串。
+		
+		assigned:
+			适用于自然主键。由java应用程序负责生成标识符。
+			
+		foreign:
+			适用于代理主键。使用另外一个相关联的对象的标识符。
+
+
+
+
+increment 标识符生成器：
+
+	increment 标识符生成器由 Hibernate 以递增的方式为代理主键赋值
+
+	Hibernate 会先读取 NEWS 表中的主键的最大值, 而接下来向 NEWS 表中
+	插入记录时, 就在 max(id) 的基础上递增, 增量为 1.
+	
+	适用范围:
+		由于 increment 生存标识符机制不依赖于底层数据库系统, 因此它适合所有的数据库系统
+		
+		适用于只有单个 Hibernate 应用进程访问同一个数据库的场合, 在集群环境下不推荐使用它
+		
+		OID 必须为 long, int 或 short 类型, 如果把 OID 定义为 byte 类型, 在运行时会抛出异常
+		
+	缺点：
+		由于每次都会查询最大的id,然后+1 ，高并发下，会读取到同样的主键。。
+
+
+
+
+
+
+identity 标识符生成器：
+
+	identity 标识符生成器由底层数据库来负责生成标识符, 它要求底层数据库把主键定义为自动增长字段类型
+	
+	适用范围:
+		
+		由于 identity 生成标识符的机制依赖于底层数据库系统, 因此, 要求底层数据库系统必须支持自动
+		增长字段类型. 支持自动增长字段类型的数据库包括: DB2, Mysql, MSSQLServer, Sybase 等
+			
+		OID 必须为 long, int 或 short 类型, 如果把 OID 定义为 byte 类型, 在运行时会抛出异常
+		
+		
+	
+
+sequence 标识符生成器：
+
+	sequence  标识符生成器利用底层数据库提供的序列来生成标识符. 
+	
+		<generator class="sequence">
+			<param name="sequence">student_seq</param>
+        </generator>
+
+	Hibernate 在持久化一个 News 对象时, 先从底层数据库的Hibernate 在持久化一个 News 对象时, 
+	先从底层数据库的 news_seq 序列中获得一个唯一的标识号, 再把它作为主键值
+	
+	适用范围:
+		
+		由于 sequence 生成标识符的机制依赖于底层数据库系统的序列, 因此, 要求底层数据库系统必须支持序列. 
+		支持序列的数据库包括: DB2, Oracle 等
+		
+		OID 必须为 long, int 或 short 类型, 如果把 OID 定义为 byte 类型, 在运行时会抛出异常
+		
+		
+
+
+
+hilo 标识符生成器：
+
+	hilo 标识符生成器由 Hibernate 按照一种 high/low 算法*生成标识符, 它从数据库的特定表的字段中获取 high 值.
+
+	Hibernate 在持久化一个 News 对象时, 由 Hibernate 负责生成主键值. hilo 标识符生成器在生成标识符时, 需要读
+	取并修改 HI_TABLE 表中的 NEXT_VALUE 值.
+	
+	适用范围:
+		
+		由于 hilo 生存标识符机制不依赖于底层数据库系统, 因此它适合所有的数据库系统。
+		
+		OID 必须为 long, int 或 short 类型, 如果把 OID 定义为 byte 类型, 在运行时会抛出异常
+		
+
+
+
+
+native 标识符生成器：
+
+	这种方式是跨平台的。
+	native 标识符生成器依据底层数据库对自动生成标识符的支持能力, 
+	来选择使用 identity, sequence 或 hilo 标识符生成器.
+	
+	适用范围:
+		
+		由于 native 能根据底层数据库系统的类型, 自动选择合适的标识符生成器, 因此很适合于跨数据库平台开发
+		
+		OID 必须为 long, int 或 short 类型, 如果把 OID 定义为 byte 类型, 在运行时会抛出异常
+		
+		
+
+
+
+
+Property：
+
+	property 元素用于指定类的属性和表的字段的映射
+
+	name:指定该持久化类的属性的名字
+	
+	column:指定与类的属性映射的表的字段名. 如果没有设置该属性, Hibernate 将直接使用类的属性名作为字段名. 
+
+	type:指定 Hibernate 映射类型. Hibernate 映射类型是 Java 类型与 SQL 类型的桥梁. 
+		如果没有为某个属性显式设定映射类型, Hibernate 会运用反射机制先识别出持久化
+		类的特定属性的 Java 类型, 然后自动使用与之对应的默认的 Hibernate 映射类型.
+
+	not-null:若该属性值为 true, 表明不允许为 null, 默认为 false
+
+	access:指定 Hibernate 的默认的属性访问策略。默认值为 property, 即使用 getter, setter 
+	方法来访问属性. 若指定 field, 则 Hibernate 会忽略 getter/setter 方法, 而通过反射访问
+	成员变量
+
+	unique: 设置是否为该属性所映射的数据列添加唯一约束. 
+	
+	update：这一列的的值是否可以被修改。false为不能修改，默认为true。
+	
+	index: 指定一个字符串的索引名称. 当系统需要 Hibernate 自动建表时, 用于为该属性所映射的数据列创建索引, 
+		   从而加快该数据列的查询.
+
+	length: 指定该属性所映射数据列的字段的长度
+
+	scale: 指定该属性所映射数据列的小数位数, 对 double, float, decimal 等类型的数据列有效.
+
+	formula：设置一个 SQL 表达式, Hibernate 将根据它来计算出派生属性的值. 
+	
+	派生属性: 并不是持久化类的所有属性都直接和表的字段匹配, 持久化类的有些属性的值必须在运行时
+			  通过计算才能得出来, 这种属性称为派生属性
+			
+	使用 formula 属性时：
+
+		formula=“(sql)” 的英文括号不能少
+		
+		Sql 表达式中的列名和表名都应该和数据库对应, 而不是和持久化对象的属性对应
+		
+		如果需要在 formula 属性中使用参数, 这直接使用 where cur.id=id 形式, 其中 id 就是参数, 
+		和当前持久化对象的 id 属性对应的列的 id 值将作为参数传入. 
+
+	
+	
+
+
+
+Java 类型, Hibernate 映射类型及 SQL 类型之间的对应关系 ：
+
+	hibernate				java					标准SQL类型				大小
+	
+	integer/int			java.lang.Integer/int		INTEGER					4字节
+	long				java.lang.Long/long			BIGINT					8字节
+	short				java.lang.Short/short		SMALLINT				2字节
+	byte				java.lang.Byte/byte			TINYINT					1字节
+	flost				java.lang.Float/float		FlOAT					4字节
+	double				java.lang.Double/double		DOUBLE					8字节
+	big_decimal			java.math.Bigdecimal		NUMERIC					
+	character			java.lang.Character/		CHAR(1)					定长字符
+						java.lang.String/char									
+	string				java.lang.String			VARCHAR					变长字符
+	boolean/yes_no		java,lang.Boolean/boolean	BIT						boolean类型
+	/true_false																	
+	date				java.util.Date/				DATE					日期
+						java.sql.Date										
+	timestamp			java.util.Date/				TIMESTAMP				日期
+						java.sql.Date										
+	calendar			java.util.Calendar			TIMESTAMP				日期
+	calendar_date		java.util.Calendar			DATE					日期
+	binary				byte[]						BLOB					BLOB
+	text				java.lang.String			TEXT					CLOB
+	serializable		实现了java.io.Serializable	BLOB					BLOB
+	clob				java.sql.Clob				CLOB					CLOB
+	blob				java.sql.Blob				BLOB					BLOB
+	class				java.lang.Class				VARCHAR					定长字符
+	locale				java.util.Locale			VARCHAR					定长字符
+	timezone			java.util.TimeZone			VARCHAR					定长字符
+	currency			java.util.Currency			VARCHAR					定长字符
+	
+	
+	
+
+
+
+Java 时间和日期类型的 Hibernate 映射:
+	
+	在 Java 中, 代表时间和日期的类型包括: java.util.Date 和 java.util.Calendar. 
+	此外,在 JDBC API 中还提供了 3 个扩展了 java.util.Date 类的子类: java.sql.Date,
+	java.sql.Time 和 java.sql.Timestamp, 这三个类分别和标准 SQL 类型中的 DATE,
+	TIME 和 TIMESTAMP 类型对应
+	
+	在标准 SQL 中, DATE 类型表示日期, TIME 类型表示时间, TIMESTAMP 类型表示时间戳, 同时包含日期和时间信息. 
+	
+	
+
+
+使用 Hibernate 内置映射类型:
+	
+	以下情况下必须显式指定 Hibernate 映射类型
+
+		一个 Java 类型可能对应多个 Hibernate 映射类型. 例如: 如果持久化
+		类的属性为 java.util.Date 类型, 对应的 Hibernate 映射类型可以是
+		date, time 或 timestamp. 此时必须根据对应的数据表的字段的 SQL
+		类型, 来确定 Hibernate 映射类型. 如果字段为 DATE 类型, 那么
+		Hibernate 映射类型为 date; 如果字段为 TIME 类型, 那么 Hibernate
+		映射类型为 time; 如果字段为 TIMESTATMP 类型, 那么 Hibernate 映
+		射类型为 timestamp.
+		
+		
+		
+		
+
+Java 大对象类型的 Hiberante 映射:
+
+	在 Java 中, java.lang.String 可用于表示长字符串(长度超过 255), 
+	字节数组 byte[] 可用于存放图片或文件的二进制数据. 此外, 在 JDBC API 
+	中还提供了 java.sql.Clob 和 java.sql.Blob 类型, 它们分别和标准 SQL 
+	中的 CLOB 和 BLOB 类型对应. CLOB 表示字符串大对象(Character Large Object),
+	BLOB表示二进制对象(Binary Large Object)
+
+
+	Mysql 不支持标准 SQL 的 CLOB 类型, 在 Mysql 中, 用 TEXT, MEDIUMTEXT 及 LONGTEXT 
+	类型来表示长度操作 255 的长文本数据
+	
+	在持久化类中, 二进制大对象可以声明为 byte[] 或 java.sql.Blob 类型; 字符串可以声明
+	为 java.lang.String 或 java.sql.Clob
+
+	实际上在 Java 应用程序中处理长度超过 255 的字符串, 使用 java.lang.String 比 java.sql.Clob 更方便
+	
+	保存图片：
+		
+		InputStream is = new FileInputStream("");
+		Hibernate.getLobCreator(session).createBlob(is,is.availabel());
+		
+		xx.setImage();
+		
+		session.save(xx);
+		
+	获取：
+	
+		xx xx = session.get(xx.class,1);
+		Blob image = xx.getImage();
+		
+		InputStream is = image.getBinaryStream();
+		
+		
+		
+
+
+
+映射组成关系:
+	
+	建立域模型和关系数据模型有着不同的出发点:
+	
+		域模型: 由程序代码组成, 通过细化持久化类的的粒度可提高代码的可重用性, 简化编程
+		
+		在没有数据冗余的情况下, 应该尽可能减少表的数目, 简化表之间的参照关系, 以便提高数据的访问速度
+		
+	需求：
+		两个实体类，映射一张表。
+		
+		
+	Hibernate 把持久化类的属性分为两种: 
+		
+		值(value)类型: 没有 OID, 不能被单独持久化, 生命周期依赖于所属的持久化类的对象的生命周期
+		
+		实体(entity)类型: 有 OID, 可以被单独持久化, 有独立的生命周期
+	
+	显然无法直接用 property 映射 pay 属性
+
+	Hibernate 使用 <component> 元素来映射组成关系, 该元素表名 pay 属性是 Worker 类一个组成部分, 
+	在 Hibernate 中称之为组件
+	
+	
+	创建两个类。
+		Work 
+			Integer id;
+			String name;
+			Task task;
+			
+			getter/setter。。。。
+			
+		Task
+			private String one;
+			private String tow;
+			
+			getter/setter。。。
+
+		复制Student.hbm.xml文件
+			
+			<class name="Worker" table="work" schema="test" select-before-update="false" dynamic-update="true">
+				<id name="id" column="id" type="java.lang.Long">
+					<generator class="native"></generator>
+				</id>
+				<property name="name" column="name" type="java.lang.String"/>
+				<component name="task" class="Task">
+					<property name="one"></property>
+					<property name="two"></property>
+				</component>
+			</class>
+			
+			
+			
+			
+
+
+component：
+	
+	<component> 元素来映射组成关系
+		
+		class:设定组成关系属性的类型, 此处表明 pay 属性为 Pay 类型
+		
+	<parent> 元素指定组件属性所属的整体类
+	
+		name: 整体类在组件类中的属性名
+		
+		属于哪个类，那个类的名字叫啥？
+	
+	这个parent很好理解。。。在Task类里面加上 private Worker worker; getter/setter
+	Worker.hbm.xml文件里面的<component>标签内加入<parent>标签
+	
+		<component name="task" class="Task">
+            <parent name="worker" />
+            <property name="one" column="one"></property>
+            <property name="two" column="two"></property>
+        </component>
+
+
+
+
+
+
+
+
+映射一对多关联关系：
+
+	一对多关联关系：
+		
+		在领域模型中, 类与类之间最普遍的关系就是关联关系.
+		
+		在 UML 中, 关联是有方向的. 
+		
+			以 Customer 和 Order 为例： 一个用户能发出多个订单, 而一个订单只能属于一个客户. 
+			从 Order 到 Customer 的关联是多对一关联; 而从 Customer 到 Order 是一对多关联
+			
+			单向关联：
+			
+				Consumer（一） <-  Order(多)		Consumer（一） ->  Order（多）
+				
+				Order里面有个 Consumer。。 单项多对一，多个订单是一个客户的
+				
+				Consumer类里面有个List<Order> 多个订单是一个客户的
+				
+				
+			双向关联：
+				
+				Consumer（一） - Order（多）
+				
+				Consumer里面有个List<Order>，Order里有一个Consumer对象
+				
+				
+				
+				
+
+
+单向多对一：
+	
+	单向 n-1 关联只需从 n 的一端可以访问 1 的一端
+	
+	域模型: 
+		从 Order 到 Customer 的多对一单向关联需要在Order 类中定义一个 Customer 属性, 
+		而在 Customer 类中无需定义存放 Order 对象的集合属性
+		
+		Order类里面有个属性 -> private Consumer order;
+		
+	关系数据模型:
+		ORDERS 表中的 CUSTOMER_ID 参照 CUSTOMER 表的主键
+		
+		Order表 -> id，orderName，customer_id
+		
+		Consumer表 -> id,name,password
+		
+		
+		1：创建一个Consumer对象
+		priavte id,name,password
+		
+		<class name="Consumer" table="consumer">
+			<id name="id" column="id" type="java.lang.Long">
+				<generator class="native" />
+			</id>
+			<property name="name" column="name" type="java.lang.String"/>
+			<property name="password" column="password" type="java.lang.String" />
+
+		</class>
+		
+		
+		2：创建一个Order对象
+		
+			显然无法直接用 property 映射 customer 属性
+		
+			Hibernate 使用 <many-to-one> 元素来映射多对一关联关系
+			
+			<many-to-one> 元素来映射组成关系
+				
+				name: 设定待映射的持久化类的属性的名字
+				
+				column: 设定和持久化类的属性对应的表的外键
+				
+				class：设定待映射的持久化类的属性的类型
+
+		
+		id,orderName,Consumer
+		
+		<class name="Order" table="`order`">
+			<id name="id" column="id" type="java.lang.Long">
+				<generator class="native" />
+			</id>
+			<property name="orderName" column="order_name" type="java.lang.String"/>
+
+			<many-to-one name="consumer" column="consumer_id" class="Consumer"></many-to-one>
+
+		</class>
+
+
+
+		
+
+
+
+双向一对多：
+
+	双向 1-n 与 双向 n-1 是完全相同的两种情形
+
+	双向 1-n 需要在 1 的一端可以访问 n 的一端, 反之依然.
+
+	域模型:从 Order 到 Customer 的多对一双向关联需要在Order 类中定义一个 Customer 属性, 
+	而在 Customer 类中需定义存放 Order 对象的集合属性
+	
+	Project
+		id,name,List<Industry>
+	
+	Industry
+		id,orderName,Project
+		
+	关系数据模型:
+		ORDERS 表中的 CUSTOMER_ID 参照 CUSTOMER 表的主键
+		
+	
+	当 Session 从数据库中加载 Java 集合时, 创建的是 Hibernate 内置集合类的实例, 
+	因此在持久化类中定义集合属性时必须把属性声明为 Java 接口类型
+	
+	Hibernate 的内置集合类具有集合代理功能, 支持延迟检索策略
+	
+	事实上, Hibernate 的内置集合类封装了 JDK 中的集合类, 这使得 Hibernate 能够对
+	缓存中的集合对象进行脏检查, 按照集合对象的状态来同步更新数据库。
+	
+	在定义集合属性时, 通常把它初始化为集合实现类的一个实例. 这样可以提高程序的健壮性, 
+	避免应用程序访问取值为 null 的集合的方法抛出 NullPointerException
+	
+	Hibernate 使用 <set> 元素来映射 set 类型的属性
+
+
+
+
+
+
+
+<set> 元素来映射持久化类的 set 类型的属性
+	
+	name: 设定待映射的持久化类的属性的
+	
+
+
+
+
+
+<key> 元素设定与所关联的持久化类对应的表的外键
+	
+	column: 指定关联表的外键名
+	
+	
+	
+
+
+<one-to-many> 元素设定集合属性中所关联的持久化类
+	
+	class: 指定关联的持久化类的类名
+	
+	
+	
+	<class name="Industry" table="industry">
+        <id name="id" column="id" type="java.lang.Long">
+            <generator class="native" />
+        </id>
+	
+		...
+	</class>
+
+	table="industry" 
+	
+	column="id"
+	
+	column="project_id"
+	
+	<set name="industrySet" table="industry" inverse="true">
+		<key column="project_id"></key>
+		<one-to-many class="Industry"></one-to-many>
+	</set>
+	
+
+
+<set> 元素的 inverse 属性:
+
+	在hibernate中通过对 inverse 属性的来决定是由双向关联的哪一方来维护表和表之间的关系. 
+	inverse = false 的为主动方，inverse = true 的为被动方, 由主动方负责维护关联关系
+
+	在没有设置 inverse=true 的情况下，父子两边都维护父子关系 
+	
+	在 1-n 关系中，将 n 方设为主控方将有助于性能改善(如果要国家元首记住全国人民的名字，
+	不是太可能，但要让全国人民知道国家元首，就容易的多)
+	
+	在 1-N 关系中，若将 1 方设为主控方
+		
+		会额外多出 update 语句。
+		
+		插入数据时无法同时插入外键列，因而无法为外键列添加非空约束
+
+
+
+
+
+cascade 属性:
+
+	在对象 – 关系映射文件中, 用于映射持久化类之间关联关系的元素, <set>, <many-to-one> 和 <one-to-one> 
+	都有一个 cascade 属性, 它用于指定如何操纵与当前对象关联的其他对象
+	
+	save-update:
+		
+		当通过Session的save()、update()、saveOrUpdate()方法保存或更新对象时，级联保存所有关联的
+		新建的临时对象，并且级联更新所有关联的游离对象。
+		
+	delete:
+		
+		当通过Session的delete() 删除当前对象时，会级联删除所有关联的对象。
+		
+	delete-orphan:
+	
+		删除所有和当前对象接触关联关系的对象
+		
+	all-delete-orphan:
+	
+		包含all 和 delete-orphan的行文
+		
+
+
+
+
+在数据库中对集合排序
+
+	<set> 元素有一个 order-by 属性, 如果设置了该属性, 当 Hibernate 
+	通过 select 语句到数据库中检索集合对象时, 利用 order by 子句进行排序
+	
+	order-by 属性中还可以加入 SQL 函数
+	
+	
+	
+	
+	
+映射一对一关联关系:
+	
+	域模型：
+		people
+			id name IdCard
+		
+		IdCard
+			id num People
+	
+	关系数据模型：
+	
+		外键映射
+			People
+				id name id_card_id
+				
+			IdCard
+				id num 
+		
+		主键映射：	
+			People
+				id name 
+				
+			IdCard
+				id
+				num
+			
+			id -> id
+
+
+
+
+
+
+
+
+
+基于外键映射的 1-1：（你中有我我中有你）
+		
+		People01
+			id name IdCard01
+			
+		IdCard01
+			id num People01
+		
+		
+	对于基于外键的1-1关联，其外键可以存放在任意一边，在需要存放外键一端，
+	增加many-to-one元素。为many-to-one元素增加unique=“true” 属性来表示为1-1关联
+
+		<class name="People01" table="people_01">
+			<id name="id" column="id" type="java.lang.Long">
+				<generator class="native" />
+			</id>
+			<property name="name" column="name" type="java.lang.String"/>
+
+			<many-to-one name="idCard" class="IdCard01" column="id_card_id" unique="true"></many-to-one>
+		</class>
+		
+		
+		<class name="IdCard01" table="idCard_01">
+			<id name="id" column="id" type="java.lang.Long">
+				<generator class="native" />
+			</id>
+			<property name="num" column="name" type="java.lang.String"/>
+
+			<one-to-one name="people" class="People01"></one-to-one>
+
+		</class>
+		
+	
+	另一端需要使用one-to-one元素，该元素使用 property-ref 属性指定使用被关联实体主键以外的字段作为关联字段
+	
+		property-ref="idCard"
+			
+			<one-to-one name="people" class="People01" property-ref="idCard"></one-to-one>
+			
+		找到 不使用 property-ref 属性的 sql  和 使用 property-ref 属性的 sql 的日志输出区别。
+		
+	
+	两边都使用外键映射的 1-1：
+	
+		People 
+			id name id_card_id
+			
+		IdCard
+			id num people_id
+			
+	两个表都加一个外键会怎么样？？？？
+		
+		你不怕混乱就加啊。。。。
+		
+		
+		
+
+基于主键映射的 1-1：
+
+	基于主键的映射策略:指一端的主键生成器使用 foreign 策略,表明根据”对方”的主键来生成自己的主键，
+	自己并不能独立生成主键. <param> 子元素指定使用当前持久化类的哪个属性作为 “对方”
+	
+	采用foreign主键生成器策略的一端增加 one-to-one 元素映射关联属性，其one-to-one属性还应增加 
+	constrained=“true” 属性；另一端增加one-to-one元素映射关联属性。
+	
+	constrained(约束):指定为当前持久化类对应的数据库表的主键添加一个外键约束，引用被关联的对象(“对方”)
+	所对应的数据库表主键
+	
+
+
+映射多对多关联关系:
+
+	单向 n-n:
+	
+		域模型：
+
+			Category
+				id name items
+				
+			Item
+				id name price
+				
+		关系数据模型：
+
+			Category
+				id name
+				
+				
+			Category_Item
+				Category_id item_id
+				
+			
+			Item
+				id name
+				
+				
+			<class name="Category" table="category">
+				<id name="id" column="id" type="java.lang.Long">
+					<generator class="native" />
+				</id>
+				<property name="name" column="name" type="java.lang.String"/>
+
+				<set name="items" table="category_item">
+					<key>
+						<column name="category_id"></column>
+					</key>
+					<many-to-many class="Item" column="item_id"></many-to-many>
+				</set>
+			</class>
+			
+			
+			
+			<hibernate-mapping package="com.wty.many2many06">
+
+				<class name="Item" table="item">
+					<id name="id" column="id" type="java.lang.Long">
+						<generator class="native" />
+					</id>
+					<property name="name" column="name" type="java.lang.String"/>
+
+				</class>
+			</hibernate-mapping>
+				
+		
+		
+	
+	
+	双向 n-n:
+	
+		双向 n-n 关联需要两端都使用集合属性
+		
+		双向n-n关联必须使用连接表
+		
+		集合属性应增加 key 子元素用以映射外键列, 集合元素里还应增加many-to-many子元素关联实体类
+
+		在双向 n-n 关联的两边都需指定连接表的表名及外键列的列名. 两个集合元素 set 的 table 元素的值必须指定，
+		而且必须相同。
+		
+		set元素的两个子元素：key 和 many-to-many 都必须指定 column 属性，其中，key 和 many-to-many 分别指定本持久化类和关联类在连接表中的外键列名，
+		因此两边的 key 与 many-to-many 的column属性交叉相同。
+		
+		也就是说，一边的set元素的key的 cloumn值为a,many-to-many 的 column 为b；则另一边的 set 元素的 key 的 column 值 b,many-to-many的 column 值为 a.  
+		
+		对于双向 n-n 关联, 必须把其中一端的 inverse 设置为 true, 否则两端都维护关联关系可能会造成主键冲突.
+		
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+映射继承关系：
+
+	继承映射：
+	
+		对于面向对象的程序设计语言而言，继承和多态是两个最基本的概念。Hibernate 的继承映射可以理解持久化类之间的继承关系。例如：人和学生之间的关系。
+		学生继承了人，可以认为学生是一个特殊的人，如果对人进行查询，学生的实例也将被得到。
+		
+		
+		
+
+	Hibernate支持三种继承映射策略：
+		
+		使用 subclass 进行映射：将域模型中的每一个实体对象映射到一个独立的表中，也就是说不用在关系数据模型中考虑域模型中的继承关系和多态。 
+
+		使用 joined-subclass 进行映射： 对于继承关系中的子类使用同一个表，这就需要在数据库表中增加额外的区分子类类型的字段。 
+
+
+		使用  union-subclass 进行映射：域模型中的每个类映射到一个表，通过关系数据模型中的外键来描述表之间的继承关系。
+		这也就相当于按照域模型的结构来建立数据库中的表，并通过外键来建立表之间的继承关系。
+		
+		
+		
+		
+		
+		
+	采用 subclass 元素的继承映射：
+	
+		采用 subclass 的继承映射可以实现对于继承关系中父类和子类使用同一张表。
+		
+		因为父类和子类的实例全部保存在同一个表中，因此需要在该表内增加一列，使用该列来区分每行记录到低是哪个类的实例----这个列被称为辨别者列(discriminator).
+		
+		在这种映射策略下，使用 subclass 来映射子类，使用 class 或 subclass 的 discriminator-value 属性指定辨别者列的值
+		
+		所有子类定义的字段都不能有非空约束。如果为那些字段添加非空约束，那么父类的实例在那些列其实并没有值，这将引起数据库完整性冲突，导致父类的实例无法保存到数据库中
+		
+		
+		创建Parent类
+			id name
+		
+		创建Children extends Parent 类
+			password
+			
+		
+		
+		
+		<hibernate-mapping package="com.wty.subclass_08">
+
+			<!-- 3:指定Parent存储的type -->
+			<class name="Parent" table="parent" discriminator-value="parent">
+				<id name="id" column="id" type="java.lang.Long">
+					<generator class="native" />
+				</id>
+
+				<!-- 2:指定辨别者列 -->
+				<discriminator column="type" type="java.lang.String"></discriminator>
+
+				<property name="name" column="name" type="java.lang.String"/>
+
+				<!-- 1:映射子类Children -->
+				<subclass name="Children" discriminator-value="children"> <!-- 4:指定Children存储的type -->
+					<property name="password" type="java.lang.String" column="password"></property>
+				</subclass>
+
+			</class>
+		</hibernate-mapping>
+		
+		
+		
+		
+		
+		
+
+	采用 joined-subclass 元素的继承映射：
+
+		采用 joined-subclass 元素的继承映射可以实现每个子类一张表
+		
+		采用这种映射策略时，父类实例保存在父类表中，子类实例由父类表和子类表共同存储。因为子类实例也是一个特殊的父类实例，
+		因此必然也包含了父类实例的属性。于是将子类和父类共有的属性保存在父类表中，子类增加的属性，则保存在子类表中。
+		
+		在这种映射策略下，无须使用鉴别者列，但需要为每个子类使用 key 元素映射共有主键。
+		
+		子类增加的属性可以添加非空约束。因为子类的属性和父类的属性没有保存在同一个表中。
+	
+		
+			<hibernate-mapping package="com.wty.joined_subclass_09">
+
+				<class name="Parent02" table="parent02">
+					<id name="id" column="id" type="java.lang.Long">
+						<generator class="native" />
+					</id>
+
+					<property name="name" column="name" type="java.lang.String"/>
+
+					<joined-subclass name="Children02" table="children02">
+						<key column="children_id"></key>
+						<property name="password" type="java.lang.String" column="password"></property>
+					</joined-subclass>
+
+				</class>
+			</hibernate-mapping>
+	
+	
+	
+	
+
+
+	采用 union-subclass 元素的继承映射：
+
+		采用 union-subclass 元素可以实现将每一个实体对象映射到一个独立的表中。
+		
+		子类增加的属性可以有非空约束 --- 即父类实例的数据保存在父表中，而子类实例的数据保存在子类表中。
+
+		子类实例的数据仅保存在子类表中, 而在父类表中没有任何记录
+
+		在这种映射策略下，子类表的字段会比父类表的映射字段要多,因为子类表的字段等于父类表的字段、加子类增加属性的总和
+		在这种映射策略下，既不需要使用鉴别者列，也无须使用 key 元素来映射共有主键.
+		
+		使用 union-subclass 映射策略是不可使用 identity 的主键生成策略, 因为同一类继承层次中所有实体类都需要使用同一个主键种子, 
+		即多个持久化实体对应的记录的主键应该是连续的. 受此影响, 也不该使用 native 主键生成策略, 因为 native 会根据数据库来选择使用 identity 或 sequence.
+		
+
+
+
+
+
+
+	
+Hibernate 检索策略：
+
+	检索数据时的 2 个问题：
+			
+			不浪费内存：当 Hibernate 从数据库中加载 Customer 对象时, 如果同时加载所有关联的 Order 对象, 
+			而程序实际上仅仅需要访问 Customer 对象, 那么这些关联的 Order 对象就白白浪费了许多内存.
+			
+			更高的查询效率：发送尽可能少的 SQL 语句
+			
+			
+			
+			
+			
+			
+			
+类级别的检索策略：
+
+	类级别可选的检索策略包括立即检索和延迟检索, 默认为延迟检索
+	
+		立即检索: 立即加载检索方法指定的对象
+		
+		延迟检索: 延迟加载检索方法指定的对象。在使用具体的属性时，再进行加载
+		
+	类级别的检索策略可以通过 <class> 元素的 lazy 属性进行设置
+	
+		lazy 属性是 true 懒加载， false 立即加载
+	
+		如果程序加载一个对象的目的是为了访问它的属性, 可以采取立即检索. 
+		
+		如果程序加载一个持久化对象的目的是仅仅为了获得它的引用, 可以采用延迟检索。注意出现懒加载异常！
+		
+		
+	无论 <class> 元素的 lazy 属性是 true 还是 false, Session 的 get() 方法及 Query 的 list() 方法在类级别总是使用立即检索策略
+	
+	若 <class> 元素的 lazy 属性为 true 或取默认值, Session 的 load() 方法不会执行查询数据表的 SELECT 语句, 仅返回代理类对象的实例, 该代理类实例有如下特征:
+	
+		由 Hibernate 在运行时采用 CGLIB 工具动态生成
+
+		Hibernate 创建代理类实例时, 仅初始化其 OID 属性,在应用程序第一次访问代理类实例的非 OID 属性时, Hibernate 会初始化代理类实例
+		
+		
+		
+	<hibernate-mapping package="com.wty.strategy_11">
+
+		<class name="Consumer02" table="consumer02" lazy="true">
+			<id name="id" column="id" type="java.lang.Long">
+				<generator class="native" />
+			</id>
+			<property name="name" column="name" type="java.lang.String"/>
+			<property name="password" column="password" type="java.lang.String" />
+
+		</class>
+	</hibernate-mapping>
+		
+		
+		
+	
+	<hibernate-mapping package="com.wty.strategy_11">
+
+		<class name="Order02" table="`order02`">
+			<id name="id" column="id" type="java.lang.Long">
+				<generator class="native" />
+			</id>
+			<property name="orderName" column="order_name" type="java.lang.String"/>
+
+			<many-to-one name="consumer" column="consumer_id" class="Consumer02"></many-to-one>
+
+		</class>
+	</hibernate-mapping>
+	
+	
+	
+	
+一对多和多对多的检索策略:
+	
+	在映射文件中, 用 <set> 元素来配置一对多关联及多对多关联关系. <set> 元素有 lazy 和 fetch 属性
+		
+		lazy: 主要决定 orders 集合被初始化的时机. 即到底是在加载 Customer 对象时就被初始化, 还是在程序访问 orders 集合时被初始化
+
+		fetch: 取值为 “select” 或 “subselect” 时, 决定初始化 orders 的查询语句的形式;  若取值为”join”, 则决定 orders 集合被初始化的时机
+		
+		若把 fetch 设置为 “join”, lazy 属性将被忽略
+
+		<set> 元素的 batch-size 属性：用来为延迟检索策略或立即检索策略设定批量检索的数量. 批量检索能减少 SELECT 语句的数目, 提高延迟检索或立即检索的运行性能. 
+		
+
+
+
+<set> 元素的 lazy 和 fetch 属性
+
+	<set> 元素有一个 batch-size 属性, 用来为延迟检索策略或立即检索策略设定批量检索的数量. 批量检索能减少 SELECT 语句的数目, 提高延迟检索或立即检索的运行性能. 
+
+	
+		<hibernate-mapping package="com.wty.strategy_11">
+
+			<class name="Consumer02" table="consumer02" lazy="true">
+				<id name="id" column="id" type="java.lang.Long">
+					<generator class="native" />
+				</id>
+				<property name="name" column="name" type="java.lang.String"/>
+				<property name="password" column="password" type="java.lang.String" />
+
+				<set name="orders" table="order02" lazy="true" batch-size="5">		<!-- batch-size="5" -->
+					<key column="consumer_id"></key>
+					<one-to-many class="Order02"></one-to-many>
+				</set>
+
+			</class>
+		</hibernate-mapping>
