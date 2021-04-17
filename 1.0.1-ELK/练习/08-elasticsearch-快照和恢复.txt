@@ -1,0 +1,108 @@
+﻿elasticsearch 快照及从快照中恢复数据：
+
+	--集群使用sanpshot快照需要共享文件系统，所以要先配置个nfs
+	--安装nfs
+	sudo yum install nfs-utils -y
+	sudo mkdir /usr/local/elastic_backup
+	sudo chown -R wty:wty /usr/local/elastic_backup
+	sudo vim /etc/exports
+	/usr/local/elastic_backup 192.168.1.0/24(rw,sync,no_root_squash)
+	
+	
+	--关闭selinux防火墙
+	sudo setenforce 0
+	sudo service rpcbind start
+	sudo service nfs start
+
+	--所有es节点挂载nfs
+	sudo mkdir -p /mnt/elastic_backup
+	sudo chown -R wty:wty /mnt/elastic_backup
+	sudo yum install nfs-utils -y
+	sudo mount -t nfs 192.168.112.152:/usr/local/elastic_backup /mnt/elastic_backup
+	showmount -e 192.168.112.152
+
+	--开启快照,elastichsearch配置
+	--需要在master的elasticsearch.yml中添加，后重启es后才能创建仓库
+	path.repo: ["/mnt/elastic_backup"]
+
+
+##--查看快照仓库,快照仓库为空
+GET /_snapshot/
+
+##--创建仓库，设置快照目录
+PUT /_snapshot/my_backup
+{
+  "type": "fs",
+  "settings": {
+    "location": "/mnt/elastic_backup",
+    "compress": true
+  }
+}
+
+
+#--再次查询仓库
+GET /_snapshot/
+
+#等待快照完成后返回 是否等待完成 wait_for_completion=true
+PUT /_snapshot/my_backup/backup1?wait_for_completion=true
+
+#查看快照
+GET /_snapshot/my_backup/_all
+
+
+#监控快照备份进度
+GET /_snapshot/my_backup/backup1/_status
+
+##删除快照
+DELETE /_snapshot/my_backup/backup1
+
+
+#从快照恢复
+#删除重名的index，不然恢复会报错
+DELETE /*
+
+
+#恢复
+POST /_snapshot/my_backup/backup1/_restore?wait_for_completion=true
+
+
+##--默认是备份所有打开的快照。下面例子是备份指定索引的快照
+PUT /_snapshot/my_backup/backup2?wait_for_completion=true
+{
+  "indices": "cars,website",
+  "ignore_unavailable": true,
+  "include_global_state": false
+}
+
+##--恢复指定的索引
+POST /_snapshot/my_backup/backup2/restore?wait_for_completion=true
+{
+  "indices": "cars,website,museums",
+  "ignore_unavailable": true,
+  "rename_pattern": "(.+)",
+  "rename_replacement": "restored$1"
+}
+
+##--添加额外的恢复索引选项
+POST /_snapshot/my_backup/backup2/restore?wait_for_completion=true
+{
+  "indices": "museums",
+  "ignore_unavailable": true,
+  "include_global_state": false,
+  "rename_pattern": "(.+)",
+  "rename_replacement": "restored2$1",
+  "index_settings": {
+    "index.number_of_replicas": 2
+  },
+  "ignore_index_settings": [
+    "index.refresh_interval",
+    "index.routing.allocation.include._ip"
+  ]
+}
+
+
+
+
+
+
+

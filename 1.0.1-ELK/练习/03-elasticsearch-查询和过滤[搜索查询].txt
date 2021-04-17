@@ -1,0 +1,613 @@
+DELETE /school
+
+PUT /school
+{
+ "mappings": {
+   "student":{
+     "properties":{
+       "age":{"type":"long"},
+       "course":{"type":"keyword"},
+       "name":{"type":"text"},
+       "study_date":{"type":"date","format":"yyyy-MM-dd"},
+       "mark":{"type":"text"}
+     }
+   }
+ } 
+}
+
+GET /school/student/_mapping
+
+POST /school/student/_bulk
+{"index":{"_id":"1"}}
+{"name":"zhangsan","age":19,"course":"elasticsearch","study_date":"2019-10-17","mark":"today is a good day"}
+{"index":{"_id":2}}
+{"name":"lisi","age":18,"course":"spring","study_date":"2019-10-16","mark":"very good"}
+{"index":{"_id":3}}
+{"name":"wangwu","age":17,"course":"elasticsearch","study_date":"2019-10-17","mark":"sorry day"}
+{"index":{"_id":4}}
+{"name":"zhaoliu","age":16,"course":"elasticsearch","study_date":"2019-10-18","mark":"happy day"}
+{"index":{"_id":5}}
+{"name":"sunqi","age":15,"course":"elasticsearch","study_date":"2019-10-19","mark":"good happy day"}
+{"index":{"_id":6}}
+{"name":"zhouba","age":14,"course":"elasticsearch","study_date":"2019-10-20","mark":"tack care day"}
+{"index":{"_id":7}}
+{"name":"wujiu","age":13,"course":"spring elasitcsearch","study_date":"2019-10-21","mark":"tab ok"}
+{"index":{"_id":8}}
+{"name":"zhengshi","age":18,"course":"elasitcsearch","study_date":"2019-10-21"}
+{"index":{"_id":9}}
+{"name":"aaabbb","age":25,"course":"spring elasitcsearch","study_date":"2019-10-17","mark":"zhangsan today is a good day"}
+{"index":{"_id":10}}
+{"name":"ababab","age":25,"course":"good","study_date":"2019-10-17","mark":"zhangsan say elasitcsearch very good day"}
+
+GET /school/student/1
+
+
+
+
+
+#-------------------URL querystring语法------------------------#
+#全文检索
+GET /school/_search?q=zhangsan
+
+#浏览器
+#192.168.112.148:9200/school/_search?q=zhangsan&pretty
+
+#单字段全文检索
+GET /school/_search?q=name:zhangsan
+
+#条件组合
+GET /school/_search?q=+mark:zhangsan -name:aaabbb
+
+#单字段精确检索
+GET /school/_search?q=mark:"good day"
+
+#多个检索条件的组合
+GET /school/_search?q=name:("zhangsan" OR "lisi") AND NOT course:spring
+
+#字段是否存在
+GET /school/_search?q=_exists_:mark
+GET /school/_search?q=NOT _exists_:mark
+
+#通配符
+#用 ? 表示单字母 * 表示任意个字母
+GET /school/_search?q=name:zh???san
+GET /school/_search?q=name:*si
+
+#近似搜索，用~表示搜索单词可能有一两个字母写的不对，按照相似度返回结果，最多可以模糊两个距离
+GET /school/_search?q=name:zhangsnn~
+
+#指定近似搜索错误字符
+GET /school/_search?q=name:zhangsxx~1
+
+#临近搜索
+GET /school/_search?q=mark:"good day" ~1
+
+
+
+#范围搜索：对数值和时间，都可以使用范围搜索
+#[]表示端点数值包含在范围内，{} 表示端点数值不包含在范围内；
+#例如： age:> 15,date:["now-6h" TO "now"]等。
+GET /school/_search?q=age:>15
+GET /school/_search?q=age:{15 TO 19]
+
+
+
+#正则搜索：（ES中正则性能不高，尽量不要使用）
+#保留字符： . ? + * | { } [ ] ( ) " \ # @ & < > ~
+#转义字符用\，例如：\*\\
+#用.代表一个字符，类似于通配符 ?
+GET /school/_search?q=name:/zh...san/
+GET /school/_search?q=name:/zha..s.n/
+
+
+#用.*匹配多个，类似于通配符*
+GET /school/_search?q=name:/zh.*san/
+
+#用*匹配0次或多次
+GET /school/_search?q=name:/a*b*/
+
+#用 ? 匹配0此或1次
+GET /school/_search?q=name:/aaa?bbb?/
+
+#不能匹配
+GET /school/_search?q=name:/aa?bb?/
+
+#用{}表示匹配的次数，格式：{至少次数，至多次数}
+GET /school/_search?q=name:/a{3}b{3}/
+
+GET /school/_search?q=name:/a{2,4}b{2,4}/
+
+#不能匹配
+GET /school/_search?q=name:/a{4}b{4}/
+
+#用()组
+GET /school/_search?q=name:/(ab)*/
+GET /school/_search?q=name:/(a)*(b)*/
+GET /school/_search?q=name:/(ab){3}/
+
+
+#用|代表或
+GET /school/_search?q=name:/(ab){3}|aaabbb/
+
+#用[]表示可选字符，用^代表否定
+GET /school/_search?q=name:/[abc]*/
+GET /school/_search?q=name:/[a-c]*/
+GET /school/_search?q=name:/[^ab]*/
+
+
+
+
+
+#-------------------query DSL完整语法------------------------#
+#空查询，默认查询所有的文档
+GET /school/student/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+#不匹配任何文档
+GET /school/student/_search
+{
+  "query": {
+    "match_none": {}
+  }
+}
+
+#match查询
+GET /school/student/_search
+{
+  "query": {
+    "match": {
+      "mark": "day"
+    }
+  }
+}
+
+#多词match查询，默认是或的关系，有其中一个词即可。
+GET /school/student/_search
+{
+  "query": {
+    "match": {
+      "mark": "good day"
+    }
+  }
+}
+#等同于
+GET /school/student/_search
+{
+  "query": {
+    "match": {
+      "mark": {
+        "query": "good day",
+        "operator": "or"
+      }
+    }
+  }
+}
+
+#控制匹配的项目个数
+GET /school/student/_search
+{
+  "query": {
+    "match": {
+      "mark": {
+        "query": "good happy day",
+        "minimum_should_match": 2
+      }
+    }
+  }
+}
+
+#与关系，必须包含所有词
+#等同于：GET /school_search?q=mark:good AND mark:day
+GET /school/student/_search
+{
+  "query": {
+    "match": {
+      "mark": {
+        "query": "good day",
+        "operator": "and"
+      }
+    }
+  }
+}
+
+
+#短语匹配
+#等同于GET /school/_search?q=mark:"good day"
+#查询的结果是必须挨着的短语，默认slop=0
+GET /school/student/_search
+{
+  "query": {
+    "match_phrase": {
+      "mark": {
+        "query": "good day"
+      }
+    }
+  }
+}
+
+#短语匹配，slop指定词项间隔的范围
+GET /school/student/_search
+{
+  "query": {
+    "match_phrase": {
+      "mark": {
+        "query": "good day",
+        "slop": 1
+      }
+    }
+  }
+}
+
+
+#短语前缀匹配，slop指定词项间隔离的范围，max_expansions最多能查前缀多少个词项停止，默认50
+#默认在所有分片上，找到匹配到前缀的前50个词
+#5.0之后可以使用 "profile":true，可以看到一个搜索聚合请求，是如何拆分成底层的lucene请求。
+GET /school/student/_search
+{
+  "query": {
+    "match_phrase_prefix": {
+      "mark": {
+       "query": "t",
+       "max_expansions": 50,
+       "slop":1
+      }
+    }
+  }
+}
+
+#profile
+GET /school/student/_search
+{
+  "profile":true,
+  "query": {
+    "match_phrase_prefix": {
+      "mark": {
+       "query": "t",
+       "max_expansions": 50,
+       "slop":1
+      }
+    }
+  }
+}
+
+#multi_match，在多个字段上执行match查询
+GET /school/student/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "elasticsearch",
+      "fields": ["mark","course","na*"]
+    }
+  }
+}
+
+
+
+
+#-------------------term精确值查找------------------------#
+#term 查询被用于精确值匹配，这些精确值可以是数字（number）、日期（date）、布尔值（bool）、未经过分析的字符串（keyword）
+#term 查询对于输入的文本不分析，所以它将给定的值进行精确查询。
+GET /school/student/_search
+{
+  "query": {
+    "term": {
+      "age": 19
+    }
+  }
+}
+
+GET /school/student/_search
+{
+  "query": {
+    "term": {
+      "course": "spring"
+    }
+  }
+}
+
+GET /school/student/_search
+{
+  "query": {
+    "term": {
+      "course": "spring elasitcsearch"
+    }
+  }
+}
+
+
+#由于term查询不需要进行查询词的分析，mapping定义中，mark字段是text，是经过词分析的，索引在倒排索引中没有happy day这个词，所以以下查询是查不出任何结果的
+GET /school/student/_search
+{
+  "query": {
+    "term": {
+      "mark": {
+        "value": "happy day"
+      }
+    }
+  }
+}
+
+#和match做一下对比
+GET /school/student/_search
+{
+  "query": {
+    "match": {
+      "mark": "happy day"
+    }
+  }
+}
+
+#terms 查询和term查询一样，但它允许你指定多值进行匹配。
+#如果这个字段包含了指定值中的任何一个值，那么这个文档满足条件
+#和term 查询一样， terms查询对于输入的文本不分析。
+
+GET /school/student/_search
+{
+  "query": {
+    "terms": {
+      "name": [
+        "zhangsan",
+        "lisi"
+      ]
+    }
+  }
+}
+
+#效果同上
+GET /school/student/_search
+{
+  "query": {
+    "terms": {
+      "mark": [
+        "happy",
+        "day"
+      ]
+    }
+  }
+}
+
+
+#range范围查询可以用于数字，日期等类型的字段
+#gt:大于 lt:小于 gte:大于等于 lte:小于等于
+GET /school/student/_search
+{
+  "query": {
+    "range": {
+      "age": {
+        "gte": 15,
+        "lt": 17
+      }
+    }
+  }
+}
+
+
+#range范围查询，可以定义日期格式
+GET /school/student/_search
+{
+  "profile": "true", 
+  "query": {
+    "range": {
+      "study_date": {
+        "gte": "2019-10-18",
+        "lte": "2018",
+        "format": "yyyy-MM-dd||yyyy"
+      }
+    }
+  }
+}
+
+
+#时间格式可以写成now-1d/d的格式，自动转换为前天0点
+#gt 大于一个日期。向上取，2014-11-18||/M -> 2014-11-30T23:59:59.999
+#gte 大于等于一个日期。向下取，2014-11-18||/M -> 2014-11-01
+#lt 小于一个日期，想下去，2014-11-18||/M -> 2014-11-01
+#lte 小于等于一个日期。向上取2014-11-18||/M -> 2014-11-30T23:59:59.999
+GET /school/student/_search
+{
+  "profile": "true", 
+  "query": {
+    "range": {
+      "study_date": {
+        "gte": "now-10d/d",
+        "lte": "now+1M/d",
+        "time_zone": "+08:00"
+      }
+    }
+  }
+}
+
+
+#搜索某个字段是否含有值的文档
+GET /school/student/_search
+{
+  "query": {
+    "exists": {
+      "field": "mark"
+    }
+  }
+}
+
+
+#搜索某个字段没有值的文档
+GET /school/student/_search
+{
+  "query": {
+    "bool": {
+      "must_not": [
+        {
+          "exists": {
+            "field": "mark"
+          }
+        }
+      ]
+    }
+  }
+}
+
+
+
+#前缀查询
+GET /school/student/_search
+{
+  "query": {
+    "prefix": {
+      "name": {
+        "value": "zhang"
+      }
+    }
+  }
+}
+
+#通配符查询
+GET /school/student/_search
+{
+  "query": {
+    "wildcard": {
+      "name": {
+        "value": "zhang*an"
+      }
+    }
+  }
+}
+
+
+#正则表达式查询
+GET /school/student/_search
+{
+  "query": {
+    "regexp": {
+      "name": "zh.*n"
+    }
+  }
+}
+
+
+#模糊查询，用于拼写错误的词查询
+GET /school/student/_search
+{
+  "query": {
+    "fuzzy": {
+      "name": {
+        "value": "zhangsi",
+        "fuzziness": 2
+      }
+    }
+  }
+}
+
+
+#组合查询，不适用评分计算，提高效率，全部返回评分为1
+GET /school/student/_search
+{
+  "query": {
+    "constant_score": {
+      "filter": {
+        "term": {
+          "mark": "day"
+        }
+      },
+      "boost": 1.2
+    }
+  }
+}
+
+
+#组合查询，filter过滤有缓存，全部返回评分为0.0
+GET /school/student/_search
+{
+  "query": {
+    "bool": {
+      "filter": {
+        "term": {
+          "age": 25
+        }
+      }
+    }
+  }
+}
+
+
+#bool组合查询
+#must：所有的语句都必须（must）匹配，与AND等价
+#must_not：所有的语句都 不能(must not)匹配，与NOT等价。
+#should：至少有一个语句要匹配，与OR等价。
+#minimum_should_match should里面条件的最小匹配度
+
+POST /school/student/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "range": {
+            "age": {
+              "gte": 15,
+              "lte": 17
+            }
+          }
+        }
+      ],
+      "must_not": [
+        {
+          "match": {
+            "mark": "good"
+          }
+        }
+      ],
+      "should": [
+        {
+          "term": {
+            "name": {
+              "value": "zhangsan"
+            }
+          }
+        },
+        {
+          "term": {
+            "name": {
+              "value": "lisi"
+            }
+          }
+        },
+        {
+          "term": {
+            "name": {
+              "value": "zhaoliu"
+            }
+          }
+        }
+      ],
+      "filter": {
+        "term": {
+          "course": "elasticsearch"
+        }
+      },
+      "minimum_should_match": 1
+    }
+  }
+}
+
+
+#query string query
+GET /school/_search
+{
+  "query": {
+    "query_string": {
+      "query": "+mark:zhangsan -name:aaabbb"
+    }
+  }
+}
+
+GET /school/student/_search
+{
+  "query": {
+    "query_string": {
+      "query": "name:(zhangsan OR lisi) AND NOT course:spring"
+    }
+  }
+}

@@ -1,0 +1,503 @@
+#elasticsearch-聚合 metric
+DELETE /cars
+
+PUT /cars
+{
+  "mappings": {
+    "transactions":{
+      "properties":{
+        "price":{
+          "type":"long"
+        },
+        "color":{
+          "type":"keyword"
+        },
+        "make":{
+          "type":"keyword"
+        },
+        "sold":{
+          "type":"date"
+        }
+      }
+    }
+  }
+}
+
+
+POST /cars/transactions/_bulk
+{"index":{}}
+{"price":10000,"color":"red","make":"honda","sold":"2014-10-28"}
+{"index":{}}
+{"price":20000,"color":"red","make":"honda","sold":"2014-11-15"}
+{"index":{}}
+{"price":30000,"color":"green","make":"ford","sold":"2014-05-18"}
+{"index":{}}
+{"price":15000,"color":"blue","make":"ford","toyota":"2014-07-02"}
+{"index":{}}
+{"price":12000,"color":"green","make":"toyota","sold":"2014-08-19"}
+{"index":{}}
+{"price":20000,"color":"red","make":"honda","sold":"2014-11-05"}
+{"index":{}}
+{"price":80000,"color":"red","make":"bmw","sold":"2014-01-11"}
+{"index":{}}
+{"price":25000,"color":"blue","make":"ford","sold":"2014-02-12"}
+
+
+
+#---------------Cardinality Aggregation------------------#
+#查看有多少种制造商,类似于distinct
+POST /cars/transactions/_search?size=0
+{
+  "aggs": {
+    "make_count": {
+      "cardinality": {
+        "field": "make"
+      }
+    }
+  }
+}
+
+#---------------avg Aggregation------------------#
+#计算平均值
+POST /cars/transactions/_search
+{
+  "size": 0, 
+  "aggs": {
+    "avg_price": {
+      "avg": {
+        "field": "price"
+      }
+    }
+  }
+}
+
+
+#使用脚本
+POST /cars/transactions/_search?size=0
+{
+  "aggs": {
+    "avg_price": {
+      "avg": {
+        "script": {
+          "lang": "painless",
+          "inline": "doc.price.value"
+        }
+      }
+    }
+  }
+}
+
+
+#使用脚本修改计算值
+POST /cars/transactions/_search
+{
+  "size": 0, 
+  "aggs": {
+    "avg_price": {
+      "avg": {
+        "script": {
+          "lang": "painless",
+          "inline": "doc.price.value * params.sale",
+          "params": {
+            "sale":0.5
+          }
+        }
+      }
+    }
+  }
+}
+
+#------------Max Aggregation----------------#
+#求最大值
+POST /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "max_price": {
+      "max": {
+        "field": "price"
+      }
+    }
+  }
+}
+
+
+#使用脚本
+POST /cars/transactions/_search?size=0
+{
+  "aggs": {
+    "max_price": {
+      "max": {
+        "script": {
+          "lang": "painless",
+          "inline": "doc.price.value"
+        }
+      }
+    }
+  }
+}
+
+#使用脚本修改最大值
+POST /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "max_price": {
+      "max": {
+        "script": {
+          "lang": "painless",
+          "inline": "doc.price.value * params.fix",
+          "params": {
+            "fix":0.5
+          }
+        }
+      }
+    }
+  }
+}
+
+
+#------------Min Aggregation----------------#
+#求最小值
+POST /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "min_price": {
+      "min": {
+        "field": "price"
+      }
+    }
+  }
+}
+
+
+#使用脚本求最小值
+POST /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "min_price": {
+      "min": {
+        "script": {
+          "lang": "painless",
+          "inline": "doc.price.value"
+        }
+      }
+    }
+  }
+}
+
+
+#使用脚本修改最小值
+POST /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "min_price": {
+      "min": {
+        "script": {
+          "lang": "painless",
+          "inline": "doc.price.value * params.fix",
+          "params": {
+            "fix":0.5
+          }
+        }
+      }
+    }
+  }
+}
+
+#------------Sum Aggregation----------------#
+POST /cars/transactions/_search
+{
+ "size": 0 ,
+ "aggs": {
+   "sum_price": {
+     "sum": {
+       "field": "price"
+     }
+   }
+ }
+}
+
+
+#使用脚本求和
+POST /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "sum_price": {
+      "sum": {
+        "script": {
+          "lang": "painless",
+          "inline": "doc.price.value"
+        }
+      }
+    }
+  }
+}
+
+
+#使用脚本修改和
+POST /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "sum_price": {
+      "sum": {
+        "script": {
+          "lang":"painless",
+          "inline": "doc.price.value * params.fix",
+          "params": {
+            "fix":0.5
+          }
+        }
+      }
+    }
+  }
+}
+
+
+#------------Stats Aggregation----------------#
+#统计函数，直接计算count,min,max,avg,sum
+POST /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "stats_price": {
+      "stats": {
+        "field": "price"
+      }
+    }
+  }
+}
+
+
+#使用脚本
+POST /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "stats_price": {
+      "stats": {
+        "script": {
+          "lang": "painless",
+          "inline": "doc.price.value"
+        }
+      }
+    }
+  }
+}
+
+#使用脚本修改值
+POST /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "stats_price": {
+      "stats": {
+        "script": {
+          "lang": "painless",
+          "inline": "doc.price.value * params.fix",
+          "params": {
+            "fix":0.5
+          }
+        }
+      }
+    }
+  }
+}
+
+
+#--------Percentiles Aggregation-----------#
+DELETE website
+#在哪个时区访问网站，延迟是多少
+PUT /website
+{
+  "mappings": {
+    "logs":{
+      "properties": {
+        "latency":{
+          "type":"long"
+        },
+        "zone":{
+          "type": "keyword"
+        },
+        "timestamp":{
+          "type": "date"
+        }
+      }
+    }
+  }
+}
+
+POST /website/logs/_bulk
+{"index":{}}
+{"latency":100,"zone":"US","timestamp":"2014-10-28"}
+{"index":{}}
+{"latency":80,"zone":"US","timestamp":"2014-10-29"}
+{"index":{}}
+{"latency":99,"zone":"US","timestamp":"2014-10-29"}
+{"index":{}}
+{"latency":102,"zone":"US","timestamp":"2014-10-28"}
+{"index":{}}
+{"latency":75,"zone":"US","timestamp":"2014-10-28"}
+{"index":{}}
+{"latency":82,"zone":"US","timestamp":"2014-10-29"}
+{"index":{}}
+{"latency":100,"zone":"EU","timestamp":"2014-10-28"}
+{"index":{}}
+{"latency":280,"zone":"EU","timestamp":"2014-10-29"}
+{"index":{}}
+{"latency":155,"zone":"EU","timestamp":"2014-10-29"}
+{"index":{}}
+{"latency":623,"zone":"EU","timestamp":"2014-10-28"}
+{"index":{}}
+{"latency":380,"zone":"EU","timestamp":"2014-10-28"}
+{"index":{}}
+{"latency":319,"zone":"EU","timestamp":"2014-10-29"}
+{"index":{}}
+{"latency":1500,"zone":"EU","timestamp":"2014-10-29"}
+
+
+#查看百分比位时间
+#默认百分比[1,5,25,50,75,95,99]
+GET /website/logs/_search
+{
+  "size": 0,
+  "aggs": {
+    "load_times": {
+      "percentiles": {
+        "field": "latency",
+        "percents": [
+          1,
+          5,
+          25,
+          50,
+          75,
+          95,
+          99
+        ]
+      }
+    }
+  }
+}
+
+
+#查看百分位，自定义百分比
+GET /website/logs/_search
+{
+  "size": 0,
+  "aggs": {
+    "load_times": {
+      "percentiles": {
+        "field": "latency",
+        "percents": [
+          95,98,99,99.9
+        ]
+      }
+    }
+  }
+}
+
+
+#百分位使用脚本
+GET /website/logs/_search
+{
+  "size": 0,
+  "aggs": {
+    "load_time": {
+      "percentiles": {
+        "script": {
+          "lang": "painless",
+          "inline": "doc.latency.value / params['timeUnit']",
+          "params": {
+            "timeUnit":1000.0
+          }
+        }
+      }
+    }
+  }
+}
+
+#----------Percentile Ranks Aggregation-------------#
+#给定范围百分比。
+GET /website/logs/_search
+{
+  "size": 0,
+  "aggs": {
+    "zones": {
+      "percentile_ranks": {
+        "field": "latency",
+        "values": [
+          200,
+          800
+        ]
+      }
+    }
+  }
+}
+
+
+#----------Geo Bounds Aggregation-------------#
+DELETE /museums
+
+PUT /museums
+{
+  "mappings": {
+    "doc":{
+      "properties":{
+        "location":{
+          "type":"geo_point"
+        }
+      }
+    }
+  }
+}
+
+
+POST /museums/doc/_bulk
+{"index":{"_id":1}}
+{"location":"52.374081,4.912350","name":"NEMO Science Museum"}
+{"index":{"_id":2}}
+{"location":"52.369219,4.901618","name":"Museum Het Rembrandthuis"}
+{"index":{"_id":3}}
+{"location":"52.371667,4.914722","name":"Nederlands Scheepvaartmuseum"}
+{"index":{"_id":4}}
+{"location":"52.222900,4.405200","name":"Letterenhuis"}
+{"index":{"_id":5}}
+{"location":"48.861111,2.336389","name":"Musée du Louvre"}
+{"index":{"_id":6}}
+{"location":"48.860000,2.327000","name":"Musée d'Orsay'"}
+
+
+#计算搜索匹配到的所有地理坐标点最大的边框
+POST /museums/_search?size=0
+{
+  "query": {
+    "match": {
+      "name": "musée"
+    }
+  }, 
+  "aggs": {
+    "viewport": {
+      "geo_bounds": {
+        "field": "location",
+        "wrap_longitude": true
+      }
+    }
+  }
+}
+
+#计算搜索匹配到的所有地理位置坐标点的中心点
+GET /museums/_search?size=0
+{
+  "aggs": {
+    "centroid": {
+      "geo_centroid": {
+        "field":"location"
+      }
+    }
+  }
+}

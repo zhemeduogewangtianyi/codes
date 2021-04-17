@@ -1,0 +1,80 @@
+﻿#移动分片
+POST /_cluster/reroute
+{
+	"commands":[
+		{
+			"move":{
+				"index":"my_index3",
+				"shard":4,
+				"from_node":"192.168.112.148",
+				"to_node": "192.168.112.150"
+			  
+			}
+		}
+	]
+}
+
+#取消自动分配分片
+PUT /_cluster/settings
+{
+  "transient": {
+    "cluster.routing.allocation.enable":"none"
+  }
+}
+
+
+POST /_cluster/reroute
+{
+  "commands": [
+    {
+      "allocate_replica": {
+        "index": "my_index3",
+        "shard": 0,
+        "node": "192.168.112.153"
+      }
+    }
+  ]
+}
+
+#主分片副本分片切换
+POST /_cluster/reroute
+{
+  "commands": [
+    {
+      "cancel": {
+        "index": "my_index3",
+        "shard": 0,
+        "node": "192.168.112.153",
+        "allow_primary":true
+      }
+    }
+  ]
+}
+
+
+#启动自动分配分片
+PUT /_cluster/settings
+{
+  "transient": {
+    "cluster.routing.allocation.enable":"all"
+  }
+}
+
+
+#查看_cat下的命令
+GET /_cat
+
+#查看健康状态 ?v代表加表头
+GET /_cat/health?v
+
+#查看索引
+GET /_cat/indices?v
+
+#帮助文档
+GET /_cat/indices?help
+
+
+
+
+
+

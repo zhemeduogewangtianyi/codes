@@ -1,0 +1,852 @@
+#删除之前的school索引
+DELETE /school
+
+#静态映射
+#format日期格式默认：strict_date_optional_time||epoch_millis
+#||可以连接多种格式
+PUT /school
+{
+ "settings": {
+   "number_of_shards": 5,
+   "number_of_replicas": 1
+ },
+ "mappings": {
+   "student":{
+     "properties":{
+       "age":{"type":"long"},
+       "course":{"type":"text"},
+       "name":{"type":"keyword"},
+       "study_date":{"type":"date","format":"yyyy-MM-dd"}
+     }
+   }
+ }
+}
+
+GET /school
+
+
+#日期格式不对无法写入：
+PUT /school/student/1
+{
+  "name":"zhangsan",
+  "course":"elasticsearch",
+  "age":19,
+  "study_date":"2019-10-16 11:39:00"
+}
+
+
+#写入一条数据
+PUT /school/student/1
+{
+  "name":"张三",
+  "age":19,
+  "course":"elasticsearch",
+  "study_date":"2019-10-16"
+}
+
+GET /school/student/1
+
+
+#动态映射 - 里面的字段可以动态增加
+
+#删除之前的school
+DELETE /school
+
+#dynamic默认true，可以是strict或者false，是否允许自动创建字段或字段不保存之类的操作。
+#other里面的dynamic是除了filed01其他的也能写进去
+PUT /school
+{
+  "mappings":{
+    "student":{
+      "dynamic":"true",
+      "properties":{
+        "name":{"type":"keyword"},
+        "age":{"type":"long"},
+        "course":{"type":"text"},
+        "study_date":{"type":"date","format":"yyyy-MM-dd||yyyy-MM-dd HH:mm:ss"},
+        "other":{
+          "type":"object",
+          "properties":{
+            "filed01":{"type":"text"}
+          },
+          "dynamic":false
+        }
+      }
+    }
+  }
+}
+
+GET /school
+
+#不能动态添加字段，无法写入
+PUT /school/student/1
+{
+  "name":"张三",
+  "gender":"男"
+}
+
+GET /school/student/1
+
+GET /school/student/_search
+
+GET /school/student/_search
+{
+  "query": {
+    "match": {
+      "gender":"男"
+    }
+  }
+}
+
+GET /school/student/_mapping
+
+#filed01的dynamic为true
+POST /school/student
+{
+  "name":"张三",
+  "other":{
+    "filed01":"0001",
+    "filed02":"0002"
+  }
+}
+
+GET /school/student/_mapping
+
+
+# mapping设置之后是不允许修改的，但是可以新增字段类型
+#在已经建立的索引下，添加mapping
+#一般静态的扩展字段可以这么玩，动态也可以
+PUT /school/_mapping/student
+{
+  "properties":{
+    "a_new_filed":{
+      "type":"keyword"
+    }
+  }
+}
+
+PUT /school/_mapping/student
+{
+  "properties": {
+    "other":{
+      "properties": {
+        "a_new_filed003":{"type":"keyword"}
+      }
+    }
+  }
+}
+
+
+#新增type
+#6.0的版本不允许一个index下面有多个type
+PUT /school/_mapping/new_type
+{
+  "properties": {
+    "a_new_filed":{
+      "type": "keyword"
+    }
+  }
+}
+
+#在已经建立的索引下，添加一个object类型字段的mapping
+PUT /school/_mapping/student
+{
+  "properties": {
+    "name_all":{
+      "properties": {
+        "first":{
+          "type":"keyword"
+        },
+        "last":{
+          "type":"keyword"
+        }
+      }
+    }
+  }
+}
+
+GET /school/student/_mapping
+
+#在已经建立的索引下的object字段下添加子字段
+PUT /school/_mapping/student
+{
+  "properties": {
+    "name_all":{
+      "properties": {
+        "all":{
+          "type":"keyword"
+        }
+      }
+    }
+  }
+}
+
+
+GET /school/student/_mapping
+
+
+#修改当前索引的字段mapping,增加ignore_above属性
+#注意：只有keyword属性由ignore_above属性
+PUT /school/_mapping/student
+{
+  "properties": {
+    "name":{
+      "type":"keyword",
+      "ignore_above": 200
+    }
+  }
+}
+
+
+#获取某个索引的映射信息
+GET /school/_mapping
+
+#获取某个索引下的某个type的映射信息
+GET /school/_mapping/student
+
+#获取某个索引下某个type的字段信息
+GET /school/_mapping/student/field/name
+
+#获取某个索引下某个type的多个字段信息
+GET /school/_mapping/student/field/name,age
+
+#获取某个索引下全部type的多个字段信息
+GET /school/_mapping/field/name,age
+
+#获取多个索引内的字段的mapping
+GET /school,wty/_mapping/field/name,course
+
+#获取多个索引下的mapping(通配符)
+GET /sc*/_mapping/
+
+#获取多个索引下多个type的mapping（通配符）
+GET /sc*/_mapping/stu*
+
+#获取多个索引下多个type的，多个字段的mapping（通配符）
+GET /sc*/_mapping/stu*/field/n*
+
+#获取集群内所有的映射信息
+GET /_all/_mapping
+
+#获取集群内多个type的映射信息
+GET /_all/_mapping/student,wty
+
+#获取集群内多个type的字段映射信息
+GET /_all/_mapping/student,wty/field/name
+
+
+
+#创建别名
+PUT /school/_alias/school_info
+
+GET /school_info/_mapping
+
+#查看别名
+GET /_alias
+
+#添加移除别名
+PUT /school_new
+#原子性
+POST /_aliases
+{
+ "actions": [
+   {
+     "remove": {
+       "index": "school",
+       "alias":"school_info"
+     }
+   },
+   {
+     "add": {
+       "index": "school_new",
+       "alias": "school_info"
+     }
+   }
+ ] 
+}
+
+
+
+
+#----------nested类型-----------#
+
+DELETE /school
+
+PUT /school/class/1
+{
+  "name":"xxx-class",
+  "users":[
+    {
+      "name":"张三",
+      "age":19
+    },{
+      "name":"李四",
+      "age":18
+    }  
+  ]
+}
+
+
+GET /school/class/1
+
+#es扁平化存储
+#{
+#  "users.age":[19,18],
+#  "users.name":["张三","李四"]
+#}
+
+
+#boolean类型搜索方式
+GET /school/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "users.age": "19"
+          }
+        },
+        {
+          "match": {
+            "users.name": "张三"
+          }
+        }
+      ]
+    }
+  }
+}
+
+#如果想查出来
+DELETE /school
+
+GET /school
+
+PUT /school
+{
+  "mappings": {
+    "class":{
+      "properties":{
+        "name":{
+          "type":"keyword"
+        },
+        "users":{
+          "type":"nested"
+        }
+      }
+    }
+  }
+}
+
+PUT /school/class/1
+{
+  "name":"xxx-class",
+  "users":[
+    {
+      "name":"张三",
+      "age":19
+    },{
+      "name":"李四",
+      "age":18
+    }
+  ]
+}
+
+
+GET /school/_search
+{
+  "query": {
+    "nested": {
+      "path": "users",
+      "query": {
+        "bool": {
+          "must": [
+            {
+              "match": {
+                "users.name": "张三"
+              }
+            },
+            {
+              "match": {
+                "users.age": 19
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+
+
+#----------geo-point类型-----------#
+DELETE my_index
+PUT my_index
+{
+  "mappings": {
+    "my_type":{
+      "properties":{
+        "location":{
+          "type":"geo_point"
+        }
+      }
+    }
+  }
+}
+
+
+#指定经纬度
+PUT /my_index/my_type/1
+{
+  "text":"Geo-point as an Object",
+  "location":{
+    "lat":41.12,
+    "lon":-71.34
+  }
+}
+
+GET /my_index/my_type/1
+
+#格式lat纬度，lon经度
+PUT /my_index/my_type/2
+{
+  "text":"Geo-point as a geohash",
+  "location":"41.12,-71.34"
+}
+
+
+GET /my_index/my_type/2
+
+#geohash格式
+PUT /my_index/my_type/3
+{
+  "text":"Geo-point hash",
+  "location":"drm3btev3e86"
+}
+
+GET /my_index/my_type/3
+
+#格式[lon经度，lat纬度]
+PUT /my_index/my_type/4
+{
+  "text":"格式[lon经度，lat纬度]",
+  "location":[-71.34,41.12]
+}
+
+GET /my_index/my_type/4
+
+
+#方块搜索
+GET /my_index/_search
+{
+  "query": {
+    "bool": {
+      "must": {
+          "match_all": {}
+      },
+      "filter": {
+        "geo_bounding_box": {
+          "location": {
+            "top_left": {
+              "lat": 42,
+              "lon": -71.4
+            },
+            "bottom_right": {
+              "lat": 40.717,
+              "lon": -70.99
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+#距离搜索
+GET /my_index/_search
+{
+  "query": {
+    "bool": {
+      "must": {
+        "match_all": {}
+        
+      },
+      "filter": {
+        "geo_distance": {
+          "distance": "200m",
+          "location": {
+            "lat": 41.12,
+            "lon": -71.34
+          }
+        }
+      }
+    }
+  }
+}
+
+
+#特殊区域搜索
+GET /my_index/_search
+{
+  "query": {
+    "bool": {
+      "must": {
+        "match_all": {}
+      },
+      "filter": {
+        "geo_polygon": {
+          "location": {
+            "points": [
+              {"lat" : 40, "lon" : -80},
+              {"lat" : 50, "lon" : -75},
+              {"lat" : 40, "lon" : -70}
+            ]
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+#-----------默认的mapping属性-------------#
+DELETE /school
+
+#_default_映射在6.0.0中已弃用。
+PUT /school
+{
+  "mappings": {
+    "_source": {
+      "enabled": true
+    }, 
+    "student":{
+      "properties":{
+        "name":{
+          "type":"text"
+        },
+        "age":{
+          "type":"long"
+        },
+        "course":{
+          "type":"text"
+        },
+        "study_date":{
+          "type":"date",
+          "format":"yyyy-MM-dd"
+        }
+        
+      }
+    }
+  }
+}
+
+GET /school/_mapping
+
+GET /school/student/1?_source=name
+
+PUT /school/student/1
+{
+  "name":"张三",
+  "age":19,
+  "course":"elasticsearch",
+  "study_date":"2019-10-16"
+}
+
+GET /school/student/1
+
+
+
+#-----------模板-------------#
+DELETE /school
+DELETE /_template/student_template
+
+GET /_template/student_template
+
+#创建模板
+PUT /_template/student_template
+{
+  "index_patterns" : ["sc*"],
+  "order":0,
+  "settings" : {
+      "number_of_shards": 1,
+      "number_of_replicas": 1
+  },
+  "mappings":{
+    "student":{
+      "properties":{
+        "name":{"type":"text"},
+        "age":{"type":"long"},
+        "course":{"type":"text"},
+        "study_date":{"type":"date","format":"yyyy-MM-dd"}
+      }
+    }
+  }  
+}
+
+GET school
+
+PUT /school/student/1
+{
+  "name":"张三",
+  "age":25,
+  "course":"elasticsearch",
+  "study_date":"2019-10-16"
+}
+
+GET /school/_mapping
+GET /school/_settings
+
+#模板的优先级,order越大，优先级越高
+PUT /_template/template1
+{
+  "index_patterns" : ["*"],
+  "order":0,
+  "settings" : {
+      "number_of_shards": 1,
+      "number_of_replicas": 1
+  },
+  "mappings":{
+    "student":{
+      "properties":{
+        "name":{"type":"text"},
+        "age":{"type":"long"},
+        "course":{"type":"text"},
+        "study_date":{"type":"date","format":"yyyy-MM-dd"}
+      }
+    }
+  }  
+}
+
+
+PUT /_template/template2
+{
+  "index_patterns" : ["sc*"],
+  "order":1,
+  "settings" : {
+      "number_of_shards": 2,
+      "number_of_replicas": 2
+  },
+  "mappings":{
+    "student":{
+      "properties":{
+        "name":{"type":"text"},
+        "age":{"type":"long"},
+        "course":{"type":"text"},
+        "study_date":{"type":"date","format":"yyyy-MM-dd"}
+      }
+    }
+  }  
+}
+
+DELETE /_template/template1
+
+PUT /school/student/1
+{
+  "name":"张三",
+  "age":25,
+  "course":"elasticsearch",
+  "study_date":"2019-10-16"
+}
+
+
+GET /school/_mapping
+GET /school/_settings
+
+
+
+#动态模板
+PUT /_template/dynamic_template
+{
+  "index_patterns" : ["sc*"],
+  "order":1,
+  "settings" : {
+      "number_of_shards": 2,
+      "number_of_replicas": 2
+  },
+  "mappings":{
+    "student":{
+      "dynamic_templates":[
+        {
+          "message_field":{
+            "match_mapping_type": "string",
+            "match":"*msg",
+            "mapping":{
+              "type":"text",
+              "store":false
+            }
+          }
+        },
+        {
+          "string_field":{
+            "match_mapping_type": "string",
+            "match":"*",
+            "mapping":{
+              "ignore_above":256,
+              "store":false,
+              "type":"keyword"
+            }
+          }
+        }
+      ],
+      "properties":{}
+    }
+  }
+}
+
+DELETE /_template/dynamic_template
+
+PUT /school/student/1
+{
+  "name":"zhangsan",
+  "msg":"this is a message!"
+}
+
+GET /school/_mapping
+GET /school/_settings
+
+GET /school/student/_mapping
+
+
+
+#-------------分词器---------------#
+
+#内置简单分词器
+POST /_analyze
+{
+  "analyzer": "standard",
+  "text":"I am a Teacher 666.我是好人"
+}
+
+#内置简单内分词器
+POST /_analyze
+{
+  "analyzer":"simple",
+  "text":"I am a Teacher 666.我是好人"
+}
+
+#内置停止分词器
+POST /_analyze
+{
+  "analyzer":"stop",
+  "text":"I am a Teacher 666.我是好人"
+}
+
+#测试自定义组合分词器
+DELETE my_analyzer
+PUT my_analyzer
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "my_custom_analyzer":{
+          "type":"custom",
+          "tokenizer":"standard",
+          "char_fileter":["html_strip"],
+          "filter":["lowercase","stop"]
+        }
+      }
+    }
+  }
+}
+
+POST /my_analyzer/_analyze
+{
+  "analyzer":"my_custom_analyzer",
+  "text":"<html>I am a Teacher 666.<b>我是好人</b></html>"
+}
+
+#设置mapping时为字段指定分词器
+DELETE /my_analyzer
+
+PUT /my_analyzer
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "std_english":{
+          "type":"standard",
+          "stopwords":"_english_"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "my_type":{
+      "properties":{
+        "my_text":{
+          "type":"text",
+          "analyzer":"standard",
+          "fields":{
+            "stop":{
+              "type":"text",
+              "analyzer":"std_english"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+PUT /my_analyzer/my_type/1
+{
+  "my_text":"<html>I am a Teacher 666.<b>我是好人</b></html>"
+}
+
+#普通查询
+GET /my_analyzer/my_type/1
+
+#标准分析器查询
+GET /my_analyzer/_search
+{
+  "query": {
+    "match": {
+      "my_text": "a"
+    }
+  }
+}
+
+#测试停止分词器查询
+GET /my_analyzer/_search
+{
+  "query": {
+    "match": {
+      "my_text.stop": "a"
+    }
+  }
+}
+
+#查看自定义分词器
+POST /my_analyzer/_analyze
+{
+  "analyzer": "std_english",
+  "text":"<html>I am a Teacher 666.<b>我是好人</b></html>"
+}
+
+
+#动态更新分词器
+PUT /school_close
+
+GET /my_analyzer/_settings
+
+PUT /my_analyzer/_settings
+{
+  "analysis":{
+    "analyzer": {
+      "std_english":{
+        "type":"custom",
+        "tokenizer":"whitespace"
+      }
+    }
+  }
+}
+
+POST /school/_open
+
+
+
+
+
+

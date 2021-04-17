@@ -1,0 +1,927 @@
+﻿#elasticsearch-聚合 bucket
+DELETE /cars
+
+PUT /cars
+{
+  "mappings": {
+    "transactions":{
+      "properties":{
+        "price":{
+          "type":"long"
+        },
+        "color":{
+          "type":"keyword"
+        },
+        "make":{
+          "type":"keyword"
+        },
+        "sold":{
+          "type":"date"
+        }
+      }
+    }
+  }
+}
+
+
+POST /cars/transactions/_bulk
+{"index":{}}
+{"price":10000,"color":"red","make":"honda","sold":"2014-10-28"}
+{"index":{}}
+{"price":20000,"color":"red","make":"honda","sold":"2014-11-15"}
+{"index":{}}
+{"price":30000,"color":"green","make":"ford","sold":"2014-05-18"}
+{"index":{}}
+{"price":15000,"color":"blue","make":"ford","toyota":"2014-07-02"}
+{"index":{}}
+{"price":12000,"color":"green","make":"toyota","sold":"2014-08-19"}
+{"index":{}}
+{"price":20000,"color":"red","make":"honda","sold":"2014-11-05"}
+{"index":{}}
+{"price":80000,"color":"red","make":"bmw","sold":"2014-01-11"}
+{"index":{}}
+{"price":25000,"color":"blue","make":"ford","sold":"2014-02-12"}
+
+
+
+#---------------Filter Aggregation------------------#
+#红色车的数量
+GET /cars/transactions/_search?size=0
+{
+  "aggs": {
+    "red_cars":{
+      "filter": {
+        "term": {
+          "color": "red"
+        }
+      }
+    }
+  }
+}
+
+
+#-------------Filters Aggregation----------------#
+#统计红色车、蓝色车各多少个
+POST /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "card": {
+      "filters": {
+        "filters": {
+          "red_cars": {
+            "match":{
+              "color":"red"
+            }
+          },
+          "blue_cars":{
+            "term":{
+              "color":"blue"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+#统计红色车和蓝色车各多少个，并且统计两种颜色车的平均价格
+POST /cars/transactions/_search
+{
+  "size":0,
+  "aggs": {
+    "cars": {
+      "filters": {
+        "filters": {
+          "red_cars_count": {
+            "term": {
+              "color":"red"
+            }
+          },
+          "blue_cars_count":{
+            "term": {
+              "color":"blue"
+            }
+          }
+        }
+      },
+      "aggs": {
+        "avg_price": {
+          "avg": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+#-----------Date Histogram Aggregation-----------------#
+#每月销售多少台车
+#interval参数：year,quarter,month,week,day,hour,minute,second
+#interval参数：还可以写具体的事件，比如24h,90m
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "sales_over_time": {
+      "date_histogram":{
+        "field": "sold",
+        "interval": "month",
+        "format": "yyyy-MM-dd"
+      }
+    }
+  }
+}
+
+
+#指定周期90分钟
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "cars_time_over": {
+      "date_histogram": {
+        "field": "sold",
+        "interval": "90m",
+        "format": "yyyy-MM-dd HH:mm:ss"
+      }
+    }
+  }
+}
+
+
+#加入keyed参数，使返回的buckets不作为一个数组返回
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "sales_time_over": {
+      "date_histogram": {
+        "field": "sold",
+        "interval": "month",
+        "format": "yyyy-MM-dd HH:mm:ss",
+        "keyed": true
+      }
+    }
+  }
+}
+
+
+#--------date range aggregation-------------#
+#按照售卖日期范围统计车辆数量
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "cars_count": {
+      "date_range": {
+        "keyed": true, 
+        "field": "sold",
+        "format": "yyyy-MM-dd HH:mm:ss", 
+        "ranges": [
+          {
+            "from": "2014-01-01 00:00:00",
+            "to": "2014-12-31 00:00:00"
+          }
+        ]
+      }
+    }
+  }
+}
+
+
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "cars_count": {
+      "date_range": {
+        "keyed": true, 
+        "field": "sold",
+        "format": "yyyy-MM-dd HH:mm:ss", 
+        "ranges": [
+          {
+            "from": "2014-01-01 00:00:00",
+            "to": "2014-12-31 00:00:00"
+          },
+          {"from": "now-60M/M","to": "now-30M/M"}
+        ]
+      }
+    }
+  }
+}
+
+
+
+#按照售卖日期，统计车辆数量，并且算出周期内平均价
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "cars": {
+      "date_histogram": {
+        "field": "sold",
+        "interval": "quarter",
+        "format": "yyyy-MM-dd HH:mm:ss",
+        "order": {
+          "avg_price": "asc"
+        }
+      },
+      "aggs": {
+        "avg_price": {
+          "avg": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}
+
+#半年周期，卖出的多少辆汽车，以及小汽车最高，最低，总共，平均的价钱
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "cars_avg": {
+      "date_range": {
+        "field": "sold",
+        "format": "yyyy-MM-dd", 
+        "ranges": [
+          {
+            "from": "2014-01-01",
+            "to": "2014-06-01",
+            "key": "2014上半年"
+          },
+          {
+            "from": "2014-06-01",
+            "to": "2014-12-31",
+            "key": "2014下半年"
+          }
+        ]
+      },
+      "aggs": {
+        "avg_price": {
+          "stats": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+#--------Histogram Aggregation-------------#
+#直方图，按照20000区间进行分割
+GET /cars/transactions/_search
+{
+  "size":0,
+  "aggs": {
+    "price": {
+      "histogram": {
+        "field": "price",
+        "interval": 20000
+      }
+    }
+  }
+}
+
+
+#min_doc_count参数，限制桶内至少有多少个才显示
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "price": {
+      "histogram": {
+        "field": "price",
+        "interval": 20000,
+        "min_doc_count": 1
+      }
+    }
+  }
+}
+
+
+#extended_bounds参数，扩展显示范围
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "price": {
+      "histogram": {
+        "field": "price",
+        "interval": 20000,
+        "extended_bounds": {
+          "min": 0,
+          "max": 200000
+        }
+      }
+    }
+  }
+}
+
+
+#增加排序按照桶的名称降序
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "desc_by_bucets_name": {
+      "histogram": {
+        "field": "price",
+        "interval": 20000,
+        "order": {
+          "_key": "desc"
+        }
+      }
+    }
+  }
+}
+
+#增加排序，按照桶的数量降序排序
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "order_by_backets_count_desc": {
+      "histogram": {
+        "field": "price",
+        "interval": 20000,
+        "order": {
+          "_count": "desc"
+        }
+      }
+    }
+  }
+}
+
+
+#直方图，按照20000为区间进行分桶，并进行汇总
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "count": {
+      "histogram": {
+        "field": "price",
+        "interval": 20000
+      },
+      "aggs": {
+        "price_sum": {
+          "sum": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+#直方图，按照20000为区间进行分桶，并进行汇总
+#按照子聚合的指标进行升序排序
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "count": {
+      "histogram": {
+        "field": "price",
+        "interval": 20000,
+        "order": {
+          "price_sum": "asc"
+        }
+      },
+      "aggs": {
+        "price_sum": {
+          "sum": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}
+
+#增加keyed参数
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "count": {
+      "histogram": {
+        "field": "price",
+        "interval": 20000,
+        "order": {
+          "price_sum": "desc"
+        }, 
+        "keyed": true
+      },
+      "aggs": {
+        "price_sum": {
+          "sum": {
+            "field": "price"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+#--------Term Aggregation-------------#
+#按照某个字段的词条进行分组
+#在每个分片上先获取几个数量最多的词条，然后再整体二次重排，所以可能会有误差
+GET /cars/transactions/_search
+{
+  "size": 0, 
+  "aggs": {
+    "make_terms": {
+      "terms": {
+        "field": "make"
+      }
+    }
+  }
+}
+
+
+#按照词条的字母进行降序排序
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "make_terms": {
+      "terms": {
+        "field": "make",
+        "order": {
+          "_key": "desc"
+        }
+      }
+    }
+  }
+}
+
+
+
+#min_doc_count:用于限制只提取出现次数大于多少次的词条
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "make_terms": {
+      "terms": {
+        "field": "make",
+        "size": 10,
+        "min_doc_count": 3
+      }
+    }
+  }
+}
+
+
+#使用脚本，进行修改field内容
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "make_terms": {
+      "terms": {
+        "script": {
+          "inline": "'make:'+doc['make'].value",
+          "lang": "painless"
+        }
+      }
+    }
+  }
+}
+
+
+#同上
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "make_terms": {
+      "terms": {
+        "field": "make", 
+        "script": {
+          "lang": "painless",
+          "inline": "'make:'+_value"
+        }
+      }
+    }
+  }
+}
+
+
+#使用正则表达式过滤词条
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "make_terms": {
+      "terms": {
+        "field": "make",
+        "size": 10,
+        "include": ".*o.*",
+        "exclude": "f.*"
+      }
+    }
+  }
+}
+
+
+#使用精确指定的词条进行分桶
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "make_terms": {
+      "terms": {
+        "field": "make",
+        "size": 10,
+        "include": ["mazda","honda"]
+      }
+    }
+  }
+}
+
+
+#-----------Range Aggregation---------------#
+
+#按照指定的范围区间分桶，并计算数量
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "price_ranges": {
+      "range": {
+        "field": "price",
+        "ranges": [
+          {"to": 20000},
+          {
+            "from": 20000,
+            "to": 50000
+          },
+          {"from": 50000}
+        ]
+      }
+    }
+  }
+}
+
+
+
+#用script脚本指定field
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "price_range": {
+      "range": {
+        "script": {
+          "lang": "painless",
+          "inline": "doc['price'].value * 2"
+        }, 
+        "ranges": [
+         {"to": 20000},
+          {
+            "from": 20000,
+            "to": 50000
+          },
+          {"from": 50000}
+        ]
+      }
+    }
+  }
+}
+
+
+
+#在分桶前，通过脚本改值
+GET /cars/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "price_range": {
+      "range": {
+        "field": "price",
+        "script": {
+          "lang": "painless",
+          "inline": "_value * params.rate",
+          "params":{
+            "rate":2.5,
+            "rate2":4
+          }
+        }, 
+        "ranges": [
+          {"to": 20000},
+          {
+            "from": 20000,
+            "to": 50000
+          },
+          {"from": 50000}
+        ]
+      }
+    }
+  }
+}
+
+
+#-----------Global Aggregation---------------#
+#忽略query条件，用global来计算所有的文档
+GET /cars/transactions/_search
+{
+  "query": {
+    "match": {
+      "make": "honda"
+    }
+  },
+  "size": 0, 
+  "aggs": {
+    "all_makes": {
+      "global": {},
+      "aggs": {
+        "avg_price": {
+          "avg": {
+            "field": "price"
+          }
+        }
+      }
+    },
+    "honda_make":{
+      "avg": {
+        "field": "price"
+      }
+    }
+  }
+}
+
+
+#验证以下global计算是否正确
+GET /cars/transactions/_search
+{
+  "query": {
+    "match_all": {}
+  },
+  "size": 0,
+  "aggs": {
+    "all_make": {
+      "avg": {
+        "field": "price"
+      }
+    }
+  }
+}
+
+
+#-----------IP Range Aggregation---------------#
+DELETE ips
+
+PUT /ips
+{
+  "mappings": {
+    "transactions":{
+      "properties":{
+        "ip":{
+          "type":"ip"
+        }
+      }
+    }
+  }
+}
+
+GET ips
+
+POST /ips/transactions/_bulk
+{"index":{}}
+{"ip":"192.168.1.1"}
+{"index":{}}
+{"ip":"192.168.1.10"}
+{"index":{}}
+{"ip":"192.168.1.102"}
+{"index":{}}
+{"ip":"192.168.1.150"}
+{"index":{}}
+{"ip":"192.168.1.160"}
+{"index":{}}
+{"ip":"192.168.1.250"}
+
+
+GET ips/transactions/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+#按照指定的ip范围分桶，并统计数量
+GET /ips/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "ip_ranges": {
+      "ip_range": {
+        "field": "ip",
+        "ranges": [
+          {"from": "192.168.1.1"},
+          {"to":"192.168.2.1"},
+          {
+            "from": "192.168.1.1",
+            "to": "192.168.3.200"
+          }
+        ]
+      }
+    }
+  }
+}
+
+
+#通过子网掩码范围分桶
+#192.168.1.0/24 表示 192.168.1.1至192.168.1.254
+#192.168.1.0/25 表示 192.168.2.1至192.168.2.126
+GET /ips/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "ip_ranges": {
+      "ip_range": {
+        "field": "ip",
+        "ranges": [
+          {
+            "mask": "192.168.1.0/24"
+          },{
+            "mask": "192.168.1.0/25"
+          }
+        ]
+      }
+    }
+  }
+}
+
+
+#加入keyed参数
+GET /ips/transactions/_search
+{
+  "size": 0,
+  "aggs": {
+    "ip_ranges": {
+      "ip_range": {
+        "field": "ip",
+        "ranges": [
+          {
+            "mask": "192.168.1.0/24"
+          },{
+            "mask": "192.168.1.0/25"
+          }
+        ],
+        "keyed": true
+      }
+    }
+  }
+}
+
+
+#---------Geo Distance Aggregation--------------#
+DELETE /museums
+
+PUT /museums
+{
+  "mappings": {
+    "doc":{
+      "properties":{
+        "location":{
+          "type":"geo_point"
+        }
+      }
+    }
+  }
+}
+
+POST /museums/doc/_bulk?refresh
+{"index":{"_id":1}}
+{"location":"52.374081,4.912350","name":"NEMO Science Museum"}
+{"index":{"_id":2}}
+{"location":"52.369219,4.901618","name":"Museum Het Rembrandthuis"}
+{"index":{"_id":3}}
+{"location":"52.371667,4.914722","name":"Nederlands Scheepvaartmuseum"}
+{"index":{"_id":4}}
+{"location":"52.222900,4.405200","name":"Letterenhuis"}
+{"index":{"_id":5}}
+{"location":"48.861111,2.336389","name":"Musée du Louvre"}
+{"index":{"_id":6}}
+{"location":"48.860000,2.327000","name":"Musée d'Orsay'"}
+
+#指定坐标点多少距离范围内的分桶文档，默认单位：m(米)
+POST /museums/_search?size=0
+{
+  "aggs": {
+    "rings_around_amsterdam": {
+      "geo_distance": {
+        "field": "location",
+        "origin": {
+          "lat": 52.376,
+          "lon": 4.894
+        },
+        "ranges": [
+          {"to":10000},
+          {
+            "from": 37344,
+            "to": 300000
+          },
+          {"from": 300000}
+        ]
+      }
+    }
+  }
+}
+
+
+#指定单位为公里
+#可以使用:mi（miles英里），in（inches英寸），yd（yards码尺），km（kilometers），cm（centimeters），mm（millimeters）.
+POST /museums/_search?size=0
+{
+  "aggs": {
+    "museums": {
+      "geo_distance": {
+        "field": "location",
+        "origin": {
+          "lat": 52.376,
+          "lon": 4.894
+        },
+        "unit": "km", 
+        "ranges": [
+          {"to":10},
+          {
+            "from": 37.344,
+            "to": 300
+          },
+          {"from": 300}
+        ]
+      }
+    }
+  }
+}
+
+
+#指定距离模式
+#distance_type:arc弧度（默认，精度高，计算准确）,plane（性能更好，速度更快，但精度稍差）
+POST /museums/_search
+{
+  "size": 0,
+  "aggs": {
+    "museums": {
+      "geo_distance": {
+        "field": "location",
+        "origin": {
+          "lat": 52.376,
+          "lon": 4.894
+        },
+        "unit": "km", 
+        "distance_type": "plane", 
+        "ranges": [
+          {"to":10},
+          {
+            "from": 37.344,
+            "to": 300
+          },
+          {"from": 300}
+        ]
+      }
+    }
+  }
+}
+
+#使用keyed
+POST /museums/_search?size=0
+{
+  "aggs": {
+    "museums": {
+      "geo_distance": {
+        "field": "location",
+        "origin": {
+          "lat": 52.376,
+          "lon": 4.894
+        },
+        "unit": "km",
+        "distance_type": "arc", 
+        "ranges": [
+          {"to":10,"key":"人民商场"},
+          {
+            "from": 37.344,
+            "to": 300,
+            "key":"莲花山广场"
+          },
+          {"from": 300,"key":"银座"}
+        ],
+        "keyed":true
+      }
+    }
+  }
+}
+

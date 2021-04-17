@@ -1,0 +1,323 @@
+﻿#删除school索引
+DELETE /school
+
+#----------------新增部分------------------#
+
+#创建school索引
+PUT /school
+{
+  "settings": {
+    "index":{
+        "number_of_shards":5,
+				"number_of_replicas":1
+    }
+  }
+}
+
+
+#创建文档
+#注意时间格式是ISO_8601日期格式标准
+PUT /school/student/1
+{
+  "name":"zhangsan",
+  "age":15,
+  "course":"elasticsearch",
+  "study_date":"2019-10-15T11:55:55+0800"
+}
+
+#自动生成ID
+POST /school/student/
+{
+  "name":"lisi",
+  "age":20,
+  "course":"springboot",
+  "study_date":"2019-10-15T11:55:55+0800"
+}
+
+#创建文档，强制创建文档
+PUT /school/student/2?op_type=create
+{
+  "name":"zhangsan",
+  "age":21,
+  "course":"elasticsearch",
+  "study_date":"2019-10-15T11:55:55+0800"
+}
+
+#强制创建文档，第二种方式
+PUT /school/student/3/_create
+{
+  "name":"zhangsan",
+  "age":22,
+  "course":"elasticsearch",
+  "study_date":"2019-10-15T11:55:55+0800"
+}
+
+#----------------查询部分------------------#
+
+#获取文档信息
+GET /school/student/1
+
+GET /school/student/TvFUzm0BJs-pIrpffaa3
+
+
+#检查文档是否存在
+HEAD /school/student/1
+
+#获取部分数据
+GET /school/student/1?_source=name,age
+
+#仅仅获取source内容
+GET /school/student/1/_source
+
+#仅仅获取source内容并且获取部分信息
+GET /school/student/1/_source?_source=name,age
+
+
+#----------------更新部分------------------#
+
+#更新文档，注意version的变化
+#在ElasticSearch中，文档是不可变化的，不能修改他们。相反如果想要更新现有的文档，需要重新建立索引，或者进行替换。
+#在内部，ElasticSearch 已将旧文档标记为已删除，并建一个全新的文档。
+#尽管你不能对旧版本的文档进行访问，但它并不会立即消失。
+#当继续往索引里添加更多的数据， ElasticSearch会在后台清理这些已删除的文档。
+
+#完全覆盖的修改
+PUT /school/student/1
+{
+  "name":"zhang3",
+  "age":13,
+  "course":"elasticsearch",
+  "study_date":"2019-10-15T11:55:55+0800",
+  "this_is_new_field":"new_new_new"
+}
+
+GET /school/student/1
+
+#通过update API的方式更新部分字段
+POST /school/student/1/_update
+{
+  "doc":{
+    "age":11,
+    "gender":"男"
+  }
+}
+
+GET /school/student/1
+
+#通过脚本添加或修改某个字段，脚本可以是painless（默认），Groovy，类似javascript
+POST /school/student/1/_update
+{
+  "script": {
+    "lang": "painless",
+    "inline": "ctx._source.age+=1"
+  }
+}
+
+#通过脚本添加或修改某个字段
+#内置支持的语言：painless、groovey
+#javascript插件安装
+#sudo bin/elasticsearch-plugin install lan-javascript
+#python插件安装
+#sudo bin/elasticsearch-plugin install lang-python
+POST /school/student/1/_update
+{
+  "script": {
+    "lang": "painless",
+    "inline": "ctx._source.gender2='男'"
+  }
+}
+
+GET /school/student/1
+
+#通过脚本移除某个字段
+POST /school/student/1/_update
+{
+  "script": {
+    "inline": "ctx._source.remove('gender2')"
+  }
+}
+
+GET /school/student/1
+
+#通过脚本传参数
+POST /school/student/1/_update
+{
+  "script": {
+    "lang": "painless",
+    "inline": "ctx._source.name = params.name",
+    "params": {
+      "name" : "张三"
+    }
+  }
+}
+
+
+
+#----------------并发控制------------------#
+
+#通过指定版本号进行更新
+PUT /school/student/1?version=11
+{
+  "name":"zhangsan",
+  "age":16,
+  "course":"elasticsearch",
+  "study_date" : "2019-10-15T11:55:55+0800"
+}
+
+GET /school/student/1
+
+#采用外部版本号，可以更新比当前版本号大的文档
+#采用外部版本号，必须是大于0的long的整数
+#external or external_gte
+PUT /school/student/1?version=15&version_type=external
+{
+  "name":"zhang3",
+  "age":12,
+  "course":"elasticsearch",
+  "study_date" : "2019-10-15T11:55:55+0800"
+}
+
+GET /school/student/1
+
+#新版本增加update by query,默认是1000条
+POST /school/_update_by_query?scroll_size=1000&conflicts=proceed
+{
+  "script":{
+    "lang": "painless",
+    "inline": "ctx._source.name6 = 'abc'"
+  },
+  "query":{
+    "term":{
+      "name":"zhang3"
+    }
+  }
+}
+
+
+#----------------删除部分------------------#
+
+#删除文档
+#注意delete也有version字段，即使文档不存在，version 也会增加，这样的好处是跨多个分布式节点时，保证结果的正确性。
+DELETE /school/student/1
+
+#不可以删除一个type，下面的命令是错误的。
+DELETE /school/student
+
+#可以直接删除一个索引
+DELETE /school
+
+GET /school/student/1
+
+#新版本重新加入了delete by query 批量删除
+POST /school/student/_delete_by_query?conflicts=proceed
+{
+  "query":{
+    "match_all":{}
+  }
+}
+
+GET /school/student/_search
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+
+
+#----------------查询部分------------------#
+
+#空搜索 默认返回前十条
+GET /_search
+
+#获取指定索引下的文档，默认返回前十条
+GET /school/_search
+
+#获取指定索引下，指定type的文档,默认返回前10条
+GET /school/student/_search
+
+#分页查询
+GET /school/student/_search?size=5
+
+#from越大，效率越低
+GET /school/student/_search?size=5&from=5
+
+
+#轻量搜索
+GET /school/student/_search?q=-name:zhangsan
+
+#全文搜索
+GET /school/student/_search?q=elasticsearch
+
+GET /school/student/_search?q=%2Bstudy_date:<2019-10-16+%2Bname:(zhangsan lisi)	
+
+
+
+
+#批量获取 scroll scan 通过游标的方式
+#1m 代表这个游标持续一分钟
+GET /school/student/_search?scroll=1m
+{
+  "query": {
+    "match_all": {}
+  },
+  "sort": [
+    "_doc"
+  ],
+  "size": 2
+}
+
+
+#根据游标ID获取数据
+GET /_search/scroll
+{
+  "scroll":"1m",
+  "scroll_id":"DnF1ZXJ5VGhlbkZldGNoBQAAAAAAAAttFjJmSTdKaF90VEFDNEpOMHdRNzhpOWcAAAAAAAALthZxTWo1UGp0OVJXYWwtdDVhck5Dd193AAAAAAAAC7cWcU1qNVBqdDlSV2FsLXQ1YXJOQ3dfdwAAAAAAAAtvFjJmSTdKaF90VEFDNEpOMHdRNzhpOWcAAAAAAAALbhYyZkk3SmhfdFRBQzRKTjB3UTc4aTln"
+}
+
+#搜索某一个字段存在值
+GET /school/_search
+{
+  "query": {
+    "exists": {
+      "field": "name"
+    }
+  }
+}
+
+#搜索某一个字段不存在值
+GET /school/_search
+{
+  "query": {
+    "bool": {
+      "must_not": [
+        {
+          "exists": {
+            "field": "name"
+          }
+        }
+      ]
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
