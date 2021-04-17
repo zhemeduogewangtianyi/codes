@@ -1,0 +1,58 @@
+spring boot -> 1.5.9已过时
+spring cloud -> Dalston.SR1 已过时
+
+1:spring cloud 上半场和下半场
+	1：上 SpringBoot2.x版本和SpringCloud H版
+	2：下 SpringCloud Alibaba
+	
+2：spring boot版本选择
+	1：git源码地址
+		https://github.com/spring-projects/spring-boot/releases/
+		官网强烈推荐升级到2.0
+	2：SpringBoot2.0新特性
+	3：官网看Boot版本
+	
+3：spring cloud版本选择
+	1:git源码地址：
+		https://github.com/spring-projects/spring-cloud
+	2：官网：
+		https://spring.io/projects/spring-cloud
+	3：官网看Cloud版本：
+		1：Cloud命名规则 地铁站A-Z
+			SpringCloud的版本关系：
+				SpringCloud 采用了英国伦敦地铁站的名称来命名，并且由地铁名称字母A-Z
+				依次类推的形式来发布迭代版本
+				
+				SpringCloud是一个由许多子项目组成的综合项目，各子项目有不同的发布节奏。
+				为了管理SpringCloud与各子项目的版本依赖关系，发布了一个清单，其中包括了
+				某个SpringCloud版本对应的子项目版本。为了避免SpringCloud版本号与子项目
+				版本号混淆，SpringCloud版本采用了名称而非版本号的命名，这些版本的名字采用
+				了伦敦地铁站的名字，根据字母的顺序来对应版本时间顺序。例如：Angel是第一个
+				版本，Brixton是第二个版本。
+				
+				当SpringCloud的发布内容积累到临界点或者一个重大BUG被解决后，会发布一个
+				service releases 版本，简称SRX版本，比如GreenWich.SR2就是SpringCloud发布
+				的GreenWich版本的第二个SRX版本。
+		2：
+		
+4：spring cloud 和 spring boot 之间的依赖关系怎么看？
+	1：boot和cloud的依赖有冲突，选型必须看官网！！
+		https://spring.io/projects/spring-cloud#overview
+	2：依赖：
+		Finchley是基于 SpringBoot2.0.x 构建的不再Boot 1.5.x
+		Dalston 和 Edgware 是基于 SpringBoot1.5.x够贱的，不支持 SpringBoot 2.0.x
+		Camden 构建于 SpringBoot1.4.x,但依然能支持SpringBoot 1.5.x
+	3：更详细的版本对应查看方法：
+		https://start.spring.io/actuator/info
+		这玩意格式化下看。。。。
+		
+5：spring cloud 定稿版本
+	1：cloud Hoxton.SR1
+	2：boot 2.2.2.RELEASE
+	3：cloud alibaba 2.1.0.RELEASE
+	4：java 8
+	5：Maven 3.5及以上
+	6：Mysql 5.7及以上
+	
+	题外话：
+		选型一定看官网。。。

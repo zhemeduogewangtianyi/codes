@@ -1,0 +1,228 @@
+1：订单支付模块微服务
+
+
+	1：工程搭建
+		1：服务与注册发现 
+			1：Eureka
+			2:Zookeeper
+			3:Consul
+			4:Nacas
+		2：服务调用
+			1:Ribbon
+			2:LoadBalance
+		3：服务调用2
+			1:Feign
+			2:OpenFeign
+		4:服务降级
+			1：Hystrix
+			2：Resilience4J
+			3：Sentinel
+		5：服务网关：
+			1：Zuul
+			2：gateway
+		6：服务配置：
+			1：config
+			2：apollo
+			3：nacos
+		7：服务总线：
+			1：Bus
+			2：Nacos
+		
+		
+	2：约定 > 配置 > 编码 - 好的平台很重要
+	
+	3：IDEA新建Project工作空间
+		
+		1:建立一个project --- 总父工程 - Pom
+		
+		1：New Project
+			1:选择maven
+			2:maven-archetype-site
+
+		2：聚合总父工程的名字
+			1:g a v
+			
+		3：Maven选版本
+			1:maven 3.5以上
+			
+		4：工程名字
+			
+		5：字符编码
+			1：priject -> settings -> file Encodings -> Global Encoding && ProjectEncoding = UTF-8
+			&& Properties Files(*.properties)
+				-> Default encoding for properties files:UTF-8
+					-> Transparent native to-ascii conversion （√）
+					
+		6：注解生效激活
+			1：Build，Execution,Deploymenyt
+				-> Compiler
+					-> Annotation Processors
+						-> Enable annotation processing （√）
+		
+		7：Java编译版本 8
+			1：Build，Execution,Deploymenyt
+				-> Compiler
+					-> Java Compiler
+						-> Trget bytecode version --- 8
+		
+		8：File Type 过滤
+			IDEA默认出来一大堆没用的文件，可以过滤掉
+			1：Editor
+				-> File Types
+					-> 选择 Recognized File Types --- ActionScript
+						-> Ignore files and folders -- *.hprof;xxx;xxx;
+		
+		9：优化 pom
+			
+			1：src文件夹可以删掉，只留pom
+			
+			2：pom实例：
+				pom实例.txt
+				
+			3:dependencyManagement和 dependencys 的区别？
+				
+				1：dependencyManagement
+					
+					1：dependencyManagement通常会在一个组织或者一个项目的最顶层的父pom中看到。
+					能让所有子项目中引用一个依赖，不用显示的列出版本号，因为Maven会沿着父子
+					层次向上走，知道找到一个拥有dependencyManagement元素的项目，然后它就会使用
+					这个dependencyManagement元素中指定的版本号。
+					
+					2：一处修改处处受用。
+					
+					3：只是声明我要添加那些依赖以及版本号，并不具体的实现（他不引入jar包。）
+					
+					4：子项目必须要在自己的pom里面加入要用到的依赖，如父pom有声明，版本不加就会
+					用父类的jar版本（version,scope都会用父类的），写了用自己的。
+					
+				2：maven如何跳过测试？？？
+					clear -> compile -> test -> package -> install
+					
+					1：小闪电 -> 点下去test就灰色了。
+					2：小m -> mvn install -Dmaven.test.skip=true
+					3：pom文件中 <plagin>标签下加入<configuration>标签，<skip>true</skip>
+					4：pom文件中 <plagin>标签下加入<configuration>标签，<skipTests>true</skipTests>
+					注意：3和4只能选一个
+					5：第3和第4的区别？？
+						1：skip 标签不但跳过单元测试运行，而且跳过测试代码的编译
+						2：skipTests 标签会编译测试代码，不会运行。
+						
+				4：父工程创建完成，执行 mvn:install 将父工程发布到仓库，方便子工程继承
+					
+					
+	
+	4：Rest微服务工程共建
+	
+		1：思路：
+			
+			order:80（客户端消费者）  --支付-->	payment:8001（微服务提供者）
+			
+			微服务模块：
+				1：建module
+				2：改pom
+				3：写yml
+				4：主启动
+				5：业务类
+					1：建表（表.txt）
+					2：entity
+					3：dao
+					4：service
+					5：controller
+			
+		2：构建步骤：
+			
+			1：cloud-provider-payment-8001
+				-> 微服务提供者支付Module模块
+				
+				project 
+					-> New Project 
+						-> maven 
+							->选择jdk
+								-> cloud-provider-payment-8001
+									-> 注意名字
+										-> finash
+				
+				微服务模块：
+				1：建module
+				2：改pom
+				3：写yml
+				4：主启动
+				5：业务类
+					1：建表（表.txt）
+					2：entity
+					3：dao
+					4：service
+					5：controller
+				
+				看父Pom的变化
+				
+				
+			2：热部署DevTools
+				
+				1:不推荐。。
+			
+			3：cloud-consumer-order:80
+				-> 微服务消费者订单Module模块
+				
+				微服务模块：
+				1：建module
+				2：改pom
+				3：写yml
+				4：主启动
+				5：业务类
+					1：entity
+					2：RestTemplate
+						1:什么是RestTemplate？？
+							RestTemplate提供了多种便捷访问Http服务的方法
+							是一种简单便捷的访问restful服务模板类，是Spring提供的用于访问Rest服务员的客户端模板工具集
+							
+						
+						2:官网和使用
+							1：地址
+								https://docs.spring.io/spring/docs/5.2.2.RELEASE/javadoc-api/index.html?org/springframework/web/client/RestTemplate.html
+								
+							2：使用：
+								使用RestTemplate访问 restful接口非常的简单粗暴无脑。
+								(url,requestMap,ResponseBean.class)这三个参数分别代表REST请求地址、请求参数、
+								HTTP响应转换被转换成的对象类型
+						
+					3：Config配置类
+						RestTemplate @Bean实例化。。。。
+						
+					4：controller
+				
+				
+				小提示：
+					1：怎么让run dashboard自己出来？
+							-> 项目的根目录
+								-> .idea
+									-> workspace.xml
+										-> 添加这句话 到 <component name="RunDashboard">
+											<option name="configurationTypes">
+												<set>
+													<option value="SpringBootApplicationConfigurationType" />
+												</set>
+											</option>
+				
+			4：工程重构：
+				
+				1：系统中重复的地方，Entity
+				2：新建 cloud-api-commons 来公共处理
+					1：New Module
+					2：maven					
+				3：POM
+				4:entity
+				5:maven 命令 clear install
+				6:订单80 和 支付 8001分别改造
+					1：删除他们的entity和common
+					2:各自粘贴pom内容
+			
+		3：目前工程样图：
+			
+	
+	
+	
+	
+	
+	
+	

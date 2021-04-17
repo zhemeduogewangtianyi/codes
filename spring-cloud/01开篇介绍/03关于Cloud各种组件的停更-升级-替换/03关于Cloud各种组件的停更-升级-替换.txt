@@ -1,0 +1,54 @@
+1：由于停更引发的 升级惨案：
+	1：停更不停用：
+		1：被动修复bugs
+		2：不再接受合并请求
+		3：不再发布新版本
+	
+	2：补充：
+		好好学。
+		
+	3：明细条目：
+		1：以前
+		2：now2020
+			1：服务注册中心
+				1：Eureka	放弃了
+				2：Zookeeper 代替
+				3：Consul	go语言写的代替
+				4：Nacos  Alibaba（重点）
+			
+			2：服务调用：
+				1：Ribbon 可以用，不推荐
+				2：LoadBalance 逐渐取代Ribbon
+			
+			3：服务调用2：
+				1：Feign  快挂了
+				2：OpenFeign	推荐
+				
+			4：服务降级：
+				1：Hystrix	快挂了
+				2：Resilience4j		国外
+				3：Sentinel 阿里巴巴哨兵 推荐
+				
+			5：服务网关：
+				1：Zuul	挂了（作死了。。分裂了因为Zuul2，吵架打架跳槽没出来）
+				2：gateway	spring出的 极度推荐
+				
+			6：服务配置：
+				1：Config	可以用，不推荐
+				2：apolo	携程的。
+				3：Nacos	阿里巴巴的Config 推荐
+			
+			7：服务总线：
+				1：Bus	不推荐
+				2：Nacos	阿里巴巴的 推荐
+	
+2：参考资料见官网：
+	1：Spring Cloud H版本
+		https://cloud.spring.io/spring-cloud-static/Hoxton.SR1/reference/htmlsingle/
+		
+		中文版：
+			https://www.bookstack.cn/read/spring-cloud-docs/docs-index.md
+			
+	2：Spring Boot
+		https://docs.spring.io/spring-boot/docs/2.2.2.RELEASE/reference/htmlsingle/
+			

@@ -1,0 +1,35 @@
+尚硅谷 微服务架构2020.pptx
+
+
+上次看到：spring cloud
+https://www.bilibili.com/video/BV18E411x7eT?p=5
+https://www.bilibili.com/video/BV18E411x7eT?p=19
+https://www.bilibili.com/video/BV18E411x7eT?p=23
+
+
+docker
+https://www.bilibili.com/video/BV18b411K7q7?p=2
+
+linux
+https://www.bilibili.com/video/BV1dW411M7xL
+
+java基础：2020年4月25日 - 看到了11
+https://www.bilibili.com/video/BV18b411K7Lw?from=search&seid=3153803092614694437
+https://www.bilibili.com/video/BV18b411K7Lw?p=11
+笔记地址：
+http://blog.cuzz.site/2019/04/16/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/
+
+JUC与JVM：
+https://www.bilibili.com/video/BV1vE411D7KE?from=search&seid=8590808105261601511
+
+JUC简版：
+https://www.bilibili.com/video/BV1c4411w7c7
+
+JUC完整：
+https://www.bilibili.com/video/BV1nE411n7VE
+
+java14：
+https://www.bilibili.com/video/BV1ek4y1d7iy
+
+spring注解驱动：
+https://www.bilibili.com/video/BV114411c7hV?from=search&seid=347757917645671561
