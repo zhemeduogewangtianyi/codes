@@ -1,0 +1,3922 @@
+1：ElasticSearch (4-6)
+	- 搜索引擎
+
+2:Logstash - 管道传输数据(1-2)
+	-文本文件传输数据给es、redis
+	-或者从redis里面获取数据进行加工传输给其他数据源
+
+3:kibana - 外壳，类似于mysql网页管理(1-2)
+	-管理ES数据的可视化工具，可快速搜索查询、图表展示
+
+4:Beats(1) - 代替Logstash
+	-报表收集、分析协议、维持心跳
+
+5:ELK实战(3)
+	-多用于日志分析
+	-Logstash搜集日志，传输给es -> kibana做外部展示
+	
+	
+	
+	
+	
+	
+
+
+
+ElasticSearch内容
+	
+	-整体介绍
+	
+		整体介绍、架构介绍、名字概念、搭建集群、简单交互
+
+	-数据映射
+		
+		数据类型，搜集器，倒排索引等。
+		schameFrame
+			
+			mysql 插入数据，需要先建一张表，字段定义，往里面insert
+			
+			es 不需要表结构，字节写数据，根据你第一次插入的文档类型，自己建立存储，类似于表结构，数据映射。
+			
+			什么是数据映射？
+				
+				包括分词、倒排索引是什么、主要的数据类型、模板设置
+	
+	-索引管理
+		
+		基于lucene
+		怎么创建索引、怎么创建具体的文档、元数据、数据导入导出、索引怎么分片、实时查询原理
+		怎么做到实时查询、实时索引的
+	
+	-搜索查询
+	
+		搜索语法、表达式、怎么过滤、组合查询、全文搜索、近似匹配、部分匹配、聚合和分析
+	
+	-集群管理
+		
+		集群的健康检查、原理、故障转移、水平扩容、怎么分离、内存设置优化、升级维护、备份回复
+		
+
+
+
+整体介绍
+
+	es是一个基于lucene的搜索服务器，作者也是个待业的工程师，没工作。。。跟着老婆去了伦敦
+	他老婆想学做菜，他为她老婆做了个方便搜索菜谱的应用。。。这个时候他接触到了lucene：
+	全文检索工具引擎，提供强大的搜索能力，独有倒排索引，底层的一个数据结构应用。发现了lucene有问题，有大量重复形的工作。他就在
+	lucene底层之上，不断抽象，把java部分整合进去。然后就成了一个开源行的作品。英文名字叫指南针。
+	然后找到了新的工作，工作是开发分布式的工作，他就不断完善他的作品，最终形成了ElasticSearch。
+	
+	ElasticSearch是一个基于Lucene的搜索服务器；
+	它提供了一个分布式多用户能力的全文搜索引擎，基于RestFul web接口；
+	ElasticSearch是java开发的，并作为Apache许可条款下的开放源码发布，目前流行的企业级搜索引擎。
+	设计用于云计算中，能够达到实时搜索，稳定、可靠、快速、安装使用方便
+	
+	
+	ElasticSearch的用户：
+		gitHub、Dell、微软等等
+		
+	
+	ElasticSearch 和 Solr的区别：
+	
+		ElasticSearch是分布式的。
+		
+		ElasticSearch是完全支持Apache Lucene的接近实时的搜索。可设置几秒后搜索出来
+		
+		ElasticSearch采用Gateway的概念，使得全备份更简单。可以存储到hadoop等。。
+		
+		支持更多的客户端库：PHP、Ruby,Perl,Scala,Python,NET,javascript,Erlang,Clojure
+		
+		自动化插件安装，输入一个命令就好。
+		
+		集合脚本语言查询
+		
+		导入性能更好，查询性能与solr持平
+		
+		接受的数据只收json
+		
+		
+	ElasticSearch-名词解释：
+	
+		Cluster 集群 ： 
+			
+			一个集群就是由一个或者多个node组织在一起共同共，共同分享整个数据具有负载均衡
+			功能和集群。
+			
+		Node 节点 ：
+			
+			单个的装有ElasticSearch服务并且会提供故障转移和扩展的服务器。
+			多节点会自动集群。后来改为指定的节点组成集群。最好一个机器就启动一个节点。
+			
+		Index 索引：
+			
+			索引就是一个拥有几分相似特征的文档的集合。
+			一个ElasticSearch索引具有分片的概念，一个索引包括了N多个lucene索引。
+			每一个索引就相当于一个数据库。
+			
+		Type 类型：
+			
+			一个索引中，你可以定义一种或多种类型。
+			相当于数据库的表。一个关系型数据库可以有多个表
+			
+		Document 文档 ：
+		
+			一个文档是一个可被索引的基础信息单元。
+			一个表里面有多个数据，一个Document就相当于数据库里面的一行数据
+			
+		Field 列 ：
+			
+			Field是ElasticSearch的最小单位，相当于数据的某一列。
+			
+			
+			
+			
+		Shards 分片：
+		
+			ElasticSearch将索引分成若干份，每个部分就是一个Shard。
+			每一个分片就是一个lucene索引。分片可以放在不同的机器上。存储的数据可以无限扩展。
+			
+		Replicas 复制：（副本）
+		
+			Replicas是索引一份或多分拷贝。
+			某一个分片上的数据我可以存一份或者多分。当我一台机器挂掉了，主福本不在了，
+			副本升级为主副本。安全备份，防止数据丢失。
+			
+			
+		--------------------------------------------
+		关系型数据库				elasticsearch
+		
+		数据库DB						索引Index
+		表table							类型Type
+		数据行Row						文档Document
+		列Column						字段Field
+		Schema							映射Mapping
+		Select							Rest GET
+		Insert							Rest PUT
+		Delete							Rest DELETE
+		Update							Rest POST
+	-----------------------------------------------------	
+			
+		总结：
+			一个集群Cluster,包含多个Node节点,一个Node节点包含多个索引，一个索引包含多干分片，
+			一个分片包含多个Type,一个Type包含多个Document文档，一个Document文档包含多个Field列。
+			
+			或根据你第一次放入的json串来定义数据类型。
+			
+		问题：
+			索引放在不同的物理机上，怎么搜索本机上没有的索引？ - 元数据的时候解答解密。
+
+架构介绍
+
+	ElasticSearch-架构
+	
+		Restful API
+		
+		Memcached（这块没了。。。）
+		
+		Transport（数据传输层）					JMX
+		HTTP Thrift LocalJVM
+		
+		Discovery（服务发现）		Scripting（脚本层面，性能低）					3rd
+		Zen EC2						mvel js python Etc								Plugin
+		
+		Index（索引怎么创建）	Search（查询创建的数据）	Mapping（相当于关系型数据库表结构）	River（2.0之后没有了。同步其他数据源数据）
+		
+		Lucene 底层搜索工具库
+		
+		Gateway 数据存储层
+		Local FileSystem	Shared FileSystem	Hadoop HDFS		Amazon S3
+			
+
+名字概念
+
+	elasticsearch架构图。
+
+搭建集群
+
+	CentOS 7
+	
+	JDK8 + ElasticSearch
+	
+	安装Elasticsearch
+	
+	安装Elasticsearch-head插件
+	
+	
+	JDK安装---
+		
+		检查当前系统是否有jdk
+		
+			java -vsersion
+		
+			rpm -qa | grep java
+			
+			yum install java-devel
+			
+			vi /etc/profiles
+			
+			/usr/lib/jvm/java-1.8.0-openjdk/bin:/usr/lib/jvm/java-1.8.0-openjdk/jre/bin
+		
+		移除当前系统安装的jdk
+			
+			rpm -e xxx
+			
+		下载elasticsearch安装包
+			
+			cd /usr/local
+			
+			mkdir elasticsearch
+			
+			cd elasticsearch
+			
+			yum install wget
+			
+			wget https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.6.2.tar.gz
+			
+		复制文件：
+			
+			scp /usr/local/elasticsearch/elasticsearch-6.6.2.tar.gz root@192.168.112.146:/usr/local/elasticsearch
+			
+			scp /usr/local/elasticsearch/elasticsearch-6.6.2.tar.gz root@192.168.112.147:/usr/local/elasticsearch
+			
+		解压：
+			
+			tar -zxvf elasticsearch-6.6.2.tar.gz
+			
+		看一下目录：
+		
+			cd elasticsearch-6.6.2
+			
+			bin		运行ElasticSearch实例和管理插件的一些脚本
+			config	配置文件：elasticsearch.yml、logging.yml、jvm.options
+			lib		ElasticSearch使用的库
+			data	ElasticSearch存放数据的地方
+			logs	日志的文件夹
+			modules	加载的模块列表（内置插件）
+			plugins	自定义插件目录
+			
+		
+			vi elasticsearch.yml
+			
+				-集群配置:
+					
+					cluster.name: my-application
+				
+				-节点配置：
+					
+					节点的名称描述：
+					
+						node.name: node-1
+						
+					节点自定义属性，可以分配某一个索引可以存在某一个属性下边，分槽：
+						
+						node.attr.rack: r1
+						
+					是否可以为Master节点：
+					
+						node.master: true
+						
+					是否可以为数据节点：
+						
+						node.data: true
+						
+					是否可以为数据加工节点：
+					
+						node.ingest: true
+						
+				路径配置：
+				
+					数据存储路径：不配置默认和bin目录同级别，创建了一个data的文件夹
+						
+						path.data: /path/to/data
+						
+					日志文件路径：
+					
+						path.logs: /path/to/logs
+						
+				内存设置：
+				
+					运行的时候锁定内存：
+						
+						bootstrap.memory_lock: true
+						
+				
+				网络设置：
+				
+					对外访问的时候，外部通过这个ip访问
+						
+						network.host: 192.168.112.145
+						
+					端口号：默认为9300
+						
+						http.port: 9200
+						
+				
+				服务发现：Discovery
+				
+					服务启动的时候给谁发包：
+					
+						discovery.zen.ping.unicast.hosts: ["192.168.112.145","192.168.112.146", "192.168.112.147"]
+				
+					最小节点数，为了避免脑裂的发生，使用如下配置（数值为节点总数/2 + 1）
+						
+						脑裂：一个集群下存在多个Master,这时候非常危险。
+							比如ABC三个机器，C为主，A、B找不到主了，就都当了主。AB都能更新数据。
+							这个时候集群的数据就乱了，然后瘫了。
+					
+						discovery.zen.minimum_master_nodes: 3
+			
+			
+				GateWway: 网关配置
+				
+					如果集群发生重启，直到N个节点启动完成，才能开始进行集群初始化恢复动作。
+						
+						gateway.recover_after_nodes: 3
+						
+					集群应该预期有几个节点（master或者node都算）：
+					
+						gateway.expected_nodes: 5
+						
+					等待凑齐预期节点时间，例如：先凑够了三个节点，再等五分钟看看有没有凑齐5个节点。
+					
+						gateway.recover_after_time: 5m 
+						
+				其他配置：
+				
+					禁止在一个操作系统启动多个节点：
+						
+						node.max_local_storage_nodes: 1
+						
+					删除索引时，需要明确的名称：
+					
+						action.destructive_requires_name: true
+						
+					防止同一个分片的主副本放在同一台机器上：
+					
+						cluster.routing.allocation.same_shard.host: true
+						
+			JVM参数
+			vi jvm.options
+			
+				-Xms512m
+				-Xmx512m
+				
+				
+			启动：
+			
+				
+				禁用swap
+				
+					sudo swapoff -a
+				
+				修改配置：
+				
+					vi /etc/security/limits.conf
+					
+					* soft nofile 65536
+					* hard nofile 131072
+					* soft memlock unlimited
+					* hard memlock unlimited
+					* soft nproc 4096
+					* hard nproc 4096
+					
+					vi /etc/sysctl.conf
+									
+						vm.max_map_count=655360
+						vm.swappiness=1
+					
+				不允许root用户启动：
+					
+					创建用户：
+						
+						adduser wty
+						
+						passwd wty
+					
+					开放权限：
+						
+						chown wty /usr/local/elasticsearch/elasticsearch-6.6.2/ -R
+					
+					
+				前台启动：
+					
+					./bin/elasticsearch
+				
+				后台启动：
+					
+					./bin/elasticsearch -d
+					或者
+					nohup ./bin/elasticsearch &
+					
+					
+			配置第二个节点：
+			
+				ssh root@192.168.112.146
+				
+				cd /usr/local/elasticsearch
+				
+				tar -axvf elasticsearch-6.6.2.tar.gz
+				
+				修改配置文件：
+				
+					cd elasticsearch-6.6.2/config/
+					
+					修改jvm参数：
+					
+						vi jvm.options
+							
+							-Xms512m
+							-Xmx512m
+							
+					修改elasticsearch.yml
+						
+						vi elasticsearch.yml
+						
+							每一台机器一定都要是一样的
+							cluster.name: my-application-dev
+							
+							节点名称：
+							node.name: node-2
+							
+							node.master: true
+							
+							锁内存：
+							bootstrap.memory_lock: true
+							
+							对外发布的IP
+							network.host: 192.168.112.146
+							
+							要进行通讯的机器
+							discovery.zen.ping.unicast.hosts: ["192.168.112.145","192.168.112.146", "192.168.112.147"]
+							
+							防止脑裂
+							discovery.zen.minimum_master_nodes: 4
+							
+							调系统的参数：
+							
+								禁用swap
+				
+									sudo swapoff -a
+								
+								修改linux参数：
+									
+									vi /etc/security/limits.conf
+									
+										* soft nofile 65536
+										* hard nofile 131072
+										* soft memlock unlimited
+										* hard memlock unlimited
+										* soft nproc 4096
+										* hard nproc 4096
+									
+									vi /etc/sysctl.conf
+									
+										vm.max_map_count=655360
+										vm.swappiness=1
+			
+									检查参数设置是否正确
+										sudo sysctl -p
+										
+									修改最大线程数：
+									
+										vi /etc/security/limits.d/20-nproc.conf
+										
+											*          soft    nproc     4096
+											
+									重启：
+										reboot
+										或者
+										init 6
+										
+									启动：
+										adduser wty
+										passwd wty
+										
+										chown wty /usr/local/elasticsearch/elasticsearch-6.6.2/ -R
+										
+										eixt
+										
+										ssh wty@192.168.112.146
+										
+										cd /usr/local/elasticsearch/elasticsearch-6.6.2
+										/usr/local/elasticsearch/elasticsearch-6.6.2/bin/elasticsearch
+									
+									关闭：
+										kill -SIGTERM pid
+										
+									访问地址：
+										http://192.168.112.145:9200/
+										http://192.168.112.146:9200/
+										http://192.168.112.147:9200/
+										
+			第三个节点：
+				和第二个节点一样。。。
+			
+	
+	
+			测试没问题了 -》 安装ElasticSearch-HEAD插件：
+				
+				集群可视化工具，便于运维管理。
+				
+				下载 ElasticSearch-HEAD：
+				
+					cd /usr/local
+					
+					wget https://github.com/mobz/elasticsearch-head/archive/master.zip
+					
+				解压：
+					
+					unzip master.zip
+					
+					cd elasticsearch-head-master/
+					
+				安装nodejs:
+				
+					wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.2/install.sh | bash  
+					
+					激活：
+						source ~/.nvm/nvm.sh
+				
+					安装node:
+						nvm install node 
+					
+					切换到该版本：
+						nvm use node
+						
+					安装npm:
+						npm install -g cnpm --registry=https://registry.npm.taobao.org
+						
+					使用npm安装grunt:
+					
+						mkdir /usr/bin/grunt
+					
+						npm install -g grunt
+						
+						npm install -g grunt-cli  --registry=https://registry.npm.taobao.org 
+						
+						grunt -version
+						
+						cd /usr/local/elasticsearch
+					
+						git clone git://github.com/mobz/elasticsearch-head.git 
+						
+						cd elasticsearch-head/  
+						
+						npm install  #这一步可能会执行不成功，可以尝试国内镜像安装
+						#npm install -g cnpm --registry=https://registry.npm.taobao.org
+						
+						报错了：
+							卸载：
+								npm config get prefix
+								npm install -g packageName(模块名称 )
+								
+								npm uninstall  react-native-aliyun-push
+						
+						cnpm install
+					
+					
+					
+					 
+					修改配置文件：
+					
+						vi /usr/local/elasticsearch-head/Gruntfile.js
+						
+						connect: {
+								server: {
+										options: {
+												hostname: '192.168.112.145',
+												port: 9100,
+												base: '.',
+												keepalive: true
+										}
+								}
+						}
+						
+						
+						vi /usr/local/elasticsearch-head/_site/app.js
+						
+						/"http://localhost:9200		->		修改为192.168.112.145
+						
+						启动：
+							
+							/usr/bin/nohup grunt server &
+							
+							安装缺少的模块：
+								
+								npm install 模块名称 --save-dev
+								
+						vi /usr/local/elasticsearch/elasticsearch-6.6.2/config/elasticsearch.yml
+						http.cors.enabled: true  
+						http.cors.allow-origin: "*"
+						http.cors.allow-methods: OPTIONS, HEAD, GET, POST, PUT, DELETE
+						http.cors.allow-headers: "X-Requested-With, Content-Type, Content-Length, X-User"
+						
+						http.cors.allow-credentials: true
+				
+				安装kibana:
+				
+					wget https://artifacts.elastic.co/downloads/kibana/kibana-6.6.2-linux-x86_64.tar.gz
+					
+					解压：
+						
+						tar -zxvf kibana-6.2.3-linux-x86_64.tar.gz
+						
+					进行配置：
+					
+						cd /usr/local/kibana-6.2.3-linux-x86_64/config
+						
+						vi kibana.yml
+						
+							kibana的端口，默认5601
+							#server.port: 5601
+						
+							外部访问kibana的IP
+							server.host: "192.168.112.148"
+							
+							要连接到哪一个集群节点
+							elasticsearch.url: "http://192.168.112.148:9200"
+							
+							或者：
+							elasticsearch.hosts: ["http://192.168.112.148:9200","http://192.168.112.149"]
+							
+						启动：
+							
+							chown wty /usr/local/kibana-6.2.3-linux-x86_64/ -R
+						
+							cd /usr/local/kibana-6.2.3-linux-x86_64
+							
+							./bin/kibana
+							
+						访问：
+							192.168.112.148:5601
+							192.168.112.148:9100
+							192.168.112.148:9200
+							192.168.112.149:9200
+							
+					防火墙网关：
+						设置从服务器防火墙
+							yum install firewalld firewalld-config				--安装防火墙，如果你没有的话
+							firewall-cmd --permanent --list-port				--查看端口列表
+							firewall-cmd --zone=public --add-port=9200/tcp --permanent	--放开9200端口
+							firewall-cmd --zone=public --remove-port=9200/tcp --permanent	--禁止放开9200端口
+							systemctl status firewalld 或者 firewall-cmd --state			--查看状态
+						重启防火墙
+							systemctl restart firewalld.service
+							
+						查看防火墙状态：
+						systemctl status firewalld
+						停止防火墙：
+						systemctl stop firewalld
+						#设置开机不启动防火墙：
+						systemctl disable firewalld
+							
+
+ElasticSearch简单交互：
+
+	节点客户端（Node client）
+		
+		节点客户端操作为一个非数据节点加入到本地集群中。换句话说，它本身不能保存任何数据，但是它知道
+		数据在集群中的哪个节点，并且可以把请求转发到正确的节点。
+		可以启动一个node.master: false 和 node.data: false 的节点。
+		
+	传输客户端（Transport client）
+	
+		轻量级的传输客户端可以将请求发送到远程集群。它本身不加入集群，但是它可以将请求转发到集群中的
+		一个节点上。
+		head插件显示不来这个节点信息的。。
+		
+	RESTful API with JSON over HTTP:
+	
+		所有其他语言可以使用RESTful API 通过端口9200 和 ElasticSearch进行Http通讯，可以用web客户端、
+		linux上可以使用curl命令等方式来和ElasticSearch交互。
+		
+		
+		
+ElasticSearch的Restfull接口：
+
+	cluster api:
+	
+		_cluster/health、_cluster/state、_cluster/stats、_cluster/reroute、_cluster/settings
+		
+		_node/、_node/stats、_tasks、_nodes/hot_threads、_cluster/allocation/explain
+		
+	document api:
+	
+		index、get、update、delete、_mget、_bulk
+		
+	search api:
+	
+		_search、uri、search、request body search、_expain、profile
+		
+	cat api:（类似于linux方式）
+	
+	
+
+查看集群健康api：(用的最多)
+	
+	http://192.168.112.148:9200/_cluster/health?pretty
+	
+	加入pretty参数，将响应的json结果格式化，更具可读性。不加的话一横行。。。
+	
+	{
+	  "cluster_name" : "my-application", #集群的名字
+	  "status" : "green",				 #有三种状态 green(当主分片都存在，副本分片也存在)、 yellow(副本分片有一个不存在，或者机器挂了一个),red（至少挂一个主分片） 
+	  "timed_out" : false,				 #查询的信息是否超时
+	  "number_of_nodes" : 2,			 #一共有多少个节点
+	  "number_of_data_nodes" : 2,		 #我有多少个数据节点
+	  "active_primary_shards" : 5,		 #主分片个数
+	  "active_shards" : 10,				 #激活的主分片副本分片一共有多少个
+	  "relocating_shards" : 0,			 #我们正在分配的分片有多少个
+	  "initializing_shards" : 0,		 #初始化的分片多少个
+	  "unassigned_shards" : 0,			 #未分配的分片多少个
+	  "delayed_unassigned_shards" : 0,	 #2.0版本以后出现的，当一个分片丢失的时候，会延迟分片的分配，避免数据传输占用带宽
+	  "number_of_pending_tasks" : 0,	 #当前多少个处理的任务
+	  "number_of_in_flight_fetch" : 0,	 #
+	  "task_max_waiting_in_queue_millis" : 0,	#
+	  "active_shards_percent_as_number" : 100.0	#激活的分片的百分比
+	}
+	
+
+
+
+CURL命令：（Kibana会帮我省掉很多的命令）
+
+	curl -X[GET,POST,PUT,DELETE] 'http://192.168.112.148:9200/index/type' -d '{\"name\";\"wty\"}'
+	
+	curl命令是利用URL语法在命令行方式下工作的开源文件传输工具，curl可以实现常见的get/post等请求
+	
+	-x参数指定http请求的方法：GET、POST、PUT、DELETE
+	
+	-d参数指定要传输的数据
+	
+	在创建索引前，要进行一些必要的设置，尤其是索引的分片数，分片书设置好后不可修改，默认5片。
+	
+		--修改索引设置：
+		
+			curl -XPUT 'http://192.168.112.148:9200/school/' -d '{
+				"settings":{
+					"index":{
+						"number_of_shards":5,
+						"number_of_replicas":1
+					}
+				}
+			}'
+			
+		--查询当前索引的设置：
+		
+			curl -XGET 'http://192.168.112.148:9200/school/_settings'
+			
+		
+		--创建文档：（PUT必须指定ID）
+		
+			curl -XPUT "htpp://192.168.112.148:9200/school/student/1" -d '{
+				"name":"zhangsan",
+				"age":19,
+				"course":"elasticsearch",
+				"study_date":"2019-10-15T11:55:55"
+			}'
+			
+		--POST不指定ID
+		
+			curl -XPOST "http://192.168.112.148:9200/school/student" -d '{
+				"name":"lisi",
+				"age":18,
+				"course":"springboot",
+				"study_date":"2019-10-15T11:55:55"
+			}'
+			
+			_index:school #表示文档在哪里存放
+			_tyoe:student #对象类别
+			_id:1		  #文档唯一标识
+	
+		
+		
+		--返回结果：
+		
+			{
+				"_index":"school",
+				"_type":"studnet",
+				"_id":"1",
+				"_version":1,
+				"result":"created",
+				"_shards":{
+					"total":2,
+					"successful":2,
+					"failed":0
+				},
+				"created":true
+			}
+			
+			
+		
+		--获取单个文档：
+		
+			curl -XGET 'http:192.168.112.148:9200/school/student/1?pretty'
+			
+		--返回结果：
+		
+			{
+				"_index":"school",
+				"_type":"student",
+				"_id":"1",
+				"_version":1
+				"found":true,
+				"_source":{
+					"name":"zhangsan",
+					"age":19,
+					"course":"elasticsearch",
+					"study_date":"2019-10-15T11:55:55"
+				}
+			}
+			
+		--获取一部分文档：
+		
+			curl -XGET 'http://192.168.112.148:9200/school/student/1?_source=name,age&pretty'
+			
+			--返回结果：
+		
+			{
+				"_index":"school",
+				"_type":"student",
+				"_id":"1",
+				"_version":1
+				"found":true,
+				"_source":{
+					"name":"zhangsan",
+					"age":19
+				}
+			}
+			
+		--只获取_source原始文档
+		
+			curl -XGET 'http://192.168.112.148:9200/school/student/1_source?pretty'
+			
+			
+		--更新文档：(100更新4个，只剩4个)
+		
+			curl -XPUT 'http://192.168.112.148:9200/school/student/1' -d '{
+				"name":"zhangsan",
+				"age":20,
+				"course":"elasticsearch",
+				"study_date":"2019-10-15T12:55:55"
+			}'
+			
+		--返回数据：
+		
+			{
+				"_index":"school",
+				"_type":"student",
+				"_id":"10",
+				"_version":2,
+				result:"updated",
+				"_shards":{
+					"total":2,
+					"successful":2,
+					"failed":0
+				},
+				"created":false
+			}
+			
+			注意：
+				如果指定的ID的文档已经存在，则执行更新操作
+				ES首先将旧的文档标记为删除状态。
+				然后添加新的文档
+				旧的文档就不会立即消失，但是你无法访问
+				ES会在你继续添加更多数据的时候，在后台清理已经标记为删除状态的文档。
+				
+		--更新文档部分字段（100个更新4个，还剩100个）
+		
+			curl -XPOST 'http://192.168.112.148:9200/school/student/1/_update' -d '{
+				"doc":{
+					"age":48,
+					"gender":"nan"
+				}
+			}'
+			
+		--返回数据：
+			
+			{
+				"_index":"school",
+				"_type":"student",
+				"_id":"1",
+				"_version":"3",
+				"result":"updated",
+				"_shards":{
+					"total":2,
+					"successful":2,
+					"failed":0
+				}
+			}
+			
+			
+		--创建文档，仅插入不更新：（不使用POST是因为会重复插入多条ID不一样，数据一样的数据）
+		
+			curl -XPUT 'http://192.168.112.148:9200/school/student/1?op_type=create' -d '{
+				"name":"zhangsan",
+				"age":25,
+				"course":"elasticsearch",
+				"study_date":"2019-10-15T12:55:55"
+			}'
+			
+			或者：
+			
+			curl -XPUT 'http://192.168.112.148:9200/school/student/1/_create'
+			
+			如果文档已经存在，则相应的异常错误。
+			
+			
+		--删除文档：
+		
+			curl -XDELETE 'http://192.168.112.148/school/student/1'
+			
+			
+		--返回数据：
+			
+			{
+				"found":true,
+				"_index":"school",
+				"_tyoe":"student",
+				"_id":"1",
+				"_version":4,
+				"result":"deleted",
+				"_shards":{
+					"total":2,
+					"successful":2,
+					"failed":0
+				}
+			}
+			
+			注意：
+				删除一个不存在的文档，版本号也会增加。
+				
+			
+			
+			
+			100 A、B两个人同时get数据，A、B同时并发修改 100 - 1，然后两人一起提交，都是99，
+			造成了数据不一致。应该是99 98
+				
+			悲观并发控制：
+			
+				假定冲突会发生
+				
+				阻塞访问资源防止冲突
+				
+				上锁，确保只有获得锁的线程可以进行修改
+				
+			
+			乐观并发控制：
+			
+				假定冲突不发生
+				
+				每次更新操作，_vsersion + 1 （即使文档内容无变化）
+				
+				内部版本控制：版本号必须相等
+				
+				put/my_index/my_type/1?version=1可以指定version版本进行更新
+				
+				外部版本控制：版本号必须大于当前索引中文档的版本
+				
+				put/my_index/my_type/1?version=2&version_type=external
+				
+				
+				
+				
+		--获取多个文档：
+		
+			GET /school/student/_mget
+			{
+				"docs":[
+					{"_id":1},
+					{"_type":"type_other","_id":1}
+				]
+			}
+			
+			或者：
+			
+			GET /school/student/_mget
+			{
+				"ids":["1","2"]
+			}
+			
+			
+			
+		bulk API 允许在单个步骤中进行多次 create、index、update或delete请求。
+		
+			{action:{metadata}}\n
+			{request body		}\n
+			{action:{metadata}}\n
+			{request body		}\n
+			
+			action必须试一下选项之一：
+				
+				create:如果文档不存在，那么就创建它。
+				index:创建一个新文档或者替换一个现有文档。
+				update:部分更新一个文档。
+				delete:删除一个文档
+				
+			注意：
+				请求是加载到内存里面的，请求越大，其他的请求获取的内存就少。请求尽量少。
+				有一个最佳的值，超过了性能就会下降，所以文档控制的数量一般是1000-5000个左右，
+				整个文档的大小一般都是1M-5M，不要太大。不然网络带宽，执行都会产生内存占用的问题。
+				
+				
+			例子：(所有指令和文档的这一行，必须要换行)
+			
+				POST /website/log/_bulk
+				{"index":{}}
+				{"event":"User logged in"}
+				{"index":{"_type":"blog"}}
+				{"title":"Overriding the default type"}
+				{"create":{"_index":"website","_type":"bloh","_id":"123"}}
+				{"title":"if exists error"}
+				{"delete":{"_id":"123"}}
+				{"update":{"_id":"123"}}
+				{"doc":{"title":"update title"}}
+		
+		
+		--获取所有文档，默认返回前10条。
+		
+			GET /school/student/_search
+			
+			took:请求耗时
+			timed_out:有没有超时
+			shards:查询中参与分片的总数，总数，成功，失败
+			hits:返回命中的搜索信息，total,max_sorce
+			total:匹配到的文档总数
+			hits数组：查询结果前10个文档,我这次命中具体详细的信息
+			
+			
+			timeout:设置超时的时间
+			
+				GET /school/_search?timeout=10ms
+	
+
+
+		--搜索多索引、多类型
+		
+			/_search：在所有的索引中搜索所有的类型
+			/gb/_search：在gb索引中搜索所有的类型
+			/gb,us/_search：在gb和us索引中搜索所有的文档
+			/g*,u*/_search：在任何以g或者u开头的索引中搜索所有的类型
+			/gb/user/_search：在gb索引中搜索user类型
+			/gb,us/user,tweet/_search：在gb和us搜索中搜索user和tweet类型
+			/_all/user,tweet/_search：在所有的索引中搜索user 和 tweet类型
+			
+			
+		--分页参数：
+		
+			size：显示应该返回的结果数量，默认10
+			from显示应该跳过的初始结果数量，默认是0
+			
+			例如：一共15条数据，煤业站式5条结果，分3页
+				
+				第一页：GET /_search?size=5
+				第二页：GET /_search?size=5&from=5
+				第三页：GET /_search?size=5&from=10
+				
+			注意：
+				不要请求过多的深度分页，严重时这样会影响整个集群！
+			
+			
+		--轻量搜索：
+		
+			通过"字符串"的查询版本，要求在查询字符串中传递所有的参数。
+			
+			适合通过浏览器、命令做即时查询。
+			
+			例如：
+				
+				GET /school/_search?q=name:zhangsan
+				
+				GET /school/student/_search?q=elasticsearch		#所有字段包含elasticsearch的都列出来
+				
+				GET /school/student/_search?q=-name:zhangsan	#不包含张三的数据
+				
+				GET /school/student/_search?q=+name:zhangsan+age:19	#必须包含张三，并且年龄必须是19
+				
+				GET /school/student/_search?q=%2Bstudy_date:<2019-10-16+%2Bname:(zhangsan lisi)	
+			
+		--完整搜索：
+		
+			通过"请求体"的查询版本，要求使用JSON格式和更丰富的查询表达式（Query DSL）。
+			
+			查询匹配更灵活，例如：片段高亮，聚合分析等。
+			
+			例如：
+				GET /_search
+				{
+					"query":{
+						"match_all":{}
+					}
+				}
+
+
+
+		--游标搜索：(解决深度分页的问题，先返回你一部分数据，再返回你一部分数据)
+		
+			POST /school/_search?scroll=1m	# <--保持游标查询窗口一分钟
+			{
+				"query":{"match_all":{}},
+				"sort":["_doc"],
+				"size":1000
+			}
+			
+			POST /_search/scroll
+			{
+				"scroll":"1m",
+				"scroll_id":"${scroll_id}"
+			}
+			
+			
+		--删除游标：
+		
+			DELETE /_search/scroll {"scroll_id":["${scroll_id}","${scroll_id}"]}
+			
+			DELETE /_search/scroll/_all
+
+
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+什么是数据映射？
+	相当于给es创建表结构
+分析器
+	分词
+倒排索引
+	
+主要数据类型
+
+内置元字段
+	_type
+元数据
+	节点状态信息、由master来管理这部分，最重要的。
+动态模板配置
+	
+	
+	
+
+
+数据映射：
+	创建索引之前，可以预先定义索引字段类型以及相关属性。让索引建立的更加标准，为之后搜索和分析做准备。
+	如果没有创建这个映射的话，存的值未必是自己想要的值，因为数据文档格式没有那么统一。
+	
+	两种定义方式：
+	
+		静态映射
+		
+			POST /school
+			{
+				"settings":{
+					"number_of_shards":5,
+					"number_of_replicas":1
+				},
+				"mapping":{
+					"student":{
+						"properties":{
+							"age":{"type":"long"},
+							"name":{"type":"string -> text"},
+							"course":{"type":"keyword"},
+							"study_date":{"type":"date","format":"yyyy-MM-dd"}
+						}
+					}
+				}
+			}
+		
+		动态映射：
+			
+			可以通过dynamic属性进行控制
+			true：默认值，动态添加字段；false：忽略新字段；strict：强制使用点给钱的mapping设置，遇到陌生字段，
+			抛出异常。
+			
+			"other":{
+				"type":"object",
+				"dynamic": true
+			}
+			表示有新的字段，往other里面存。
+			
+			POST /school
+			{
+				"mappings":{
+					"student":{
+						"dynamic":"strict",
+						"properties":{
+							"age":{"type":"long"},
+							"name":{"type":"string -> text"},
+							"course":{"type":"keyword"},
+							"study_date":{"type":"date","format":"yyyy-MM-dd"},
+							"other":{
+								"type":"object",
+								"dynamic": true
+							}
+						}
+					}
+				}
+			}
+			
+			
+		动态映射：
+		
+			文档在写入时，检测到该索引中没有字段时，动态映射可以根据写入的json类型自动转换
+			该字段的类型，并加入到mapping映射。
+			
+			
+			JSON dataType								ElasticSearch dataType
+			null										No field is added
+			true or false								boolean field
+			floating point number						float filed
+			integer										long field
+			object										object field
+			array										Depends on the first non-null value in the array.
+			string										Either a date field (if the value passes date detection),
+														a double or long field (if the value passes numeric datection)
+														or text field,with a keywordsub-field.
+	
+	
+	
+	更新修改映射：
+	
+		mapping创建完成后，可以新增字段定义类型，不能修改已有的字段映射。
+		
+		PUT /school/_mapping/student
+		{
+			"student":{
+				"properties":{
+					"a_new_field":{
+						"type":"keyword"
+					}
+				}
+			}
+		}
+	
+	
+	
+	修改已有映射：
+	
+		重新建立一个索引，然后重新定义映射
+		
+		把就索引里的数据导入到新建立的索引中
+		
+	使用别名，进行平滑过渡：
+	
+		将当前的索引定义别名，并指向这个别名
+		
+		PUT /现有索引/_alias/别名
+		
+		应用程序用别名访问索引信息
+		
+		新创建一个索引，定义好最新的映射
+		
+		将别名指向新的索引，并且取消之前索引的指向
+		
+		POST /_aliases
+		{
+			"actions":{
+				{"remove":{"index":"现有索引名","alias":"别名"}},
+				{"add":{"index":"新建索引名","alias":"别名"}}
+			}
+		}
+		
+		
+		
+	
+	
+	Elasticsearch-类型定义属性：
+	
+		analyzer:
+			
+			索引时用的分析器，默认下elasticsearch使用的是standard分析器（lowercase+english）,stopword
+			除此之外，你还可以使用whitespace,simple,stop,english这几种内置的分析器
+			
+			分析器：在做文档写入的时候，对文档字段进行分词，分词完了录到es的索引里面去。
+			这个索引是lucene的倒排索引。
+			
+			存文档和搜索文档的时候用的分析器要一致。要是不一致会导致存的时候没问题，查的时候查不出来。
+			
+		search_analyzer:
+		
+			搜索时用的分析器，默认使用analyzer的设置
+			
+			索引：
+				可以通过文档里面的属性进行搜索
+			不索引：
+				不能按照文档里面的属性进行搜索
+			
+		index：
+			
+			5.x版本之前的值为：analyzed(索引且分析)，not_analyzed(索引但是不分析)，或者 no(不索引)
+			5.x版本之后的值为：true:索引，false:不索引
+			
+		ignore_above:
+		
+			默认单个term最大长度32kb(32767)，非英文json固定是utf-8，一个字符占3b，所以要小于32767/3=10922
+			
+		boost:
+		
+			设置字段的权值，默认值是1.0
+			
+			排序的时候进行打分，谁的重要性高，谁的重要性低。
+			百度。
+			
+		include_in_all:
+		
+			默认下elasticsearch会为每一个文档定义一个特殊的域_all，它的作用就是每一个字段都将被索引到，如果你不
+			想让某个字段被搜索到，那么就在这个字段里定义一个include_in_all=false; 默认值是true
+			
+			 
+			
+		store:
+		
+			值为： true 或者 false(默认)
+			
+			保存，当放入一个文档的时候，默认情况下，把文档的原始值存入到_source字段里面去。
+			想把字段单独存放，不放入_source中，我们就把这个字段就用store：false
+			
+		fielddata:
+		
+			存在内存中，用于排序，聚合或脚本取值
+			
+			索引的倒排索引，可以通过内存的方式读取原始数据，不用遍历一遍source值
+			索引倒排：
+				关系型数据库 id -> text -> 正排 like方式搜索
+				具体文档内容的关键词，对应哪一篇文档ID -> 倒排
+				
+			
+		doc values：
+			存在磁盘中，用于排序，聚合或脚本取值
+			
+			
+ElasticSearch分析器***：
+
+	Character filters-文本预处理
+	[HTML Strip Character Filter、Mapping Character Filter、Pattern Replace Character Filter]
+	
+	Tokenizer-分词器
+	Standard Tokenizer，Letter Tokenizer，Lowercase Tokenizer，Whitespace Tokenizer，...
+	
+	Token filters-对分词再处理
+	Stop Token Filter，Lower Case Token Filter，Uppercase Token Filter，Length Token Filterd，...
+	
+	
+	为索引指定分词器：
+	
+		PUT my_index
+		{
+			"settings":{
+				"analysis":{
+					"analyzer":{
+						"std_english":{
+							"type": "standard",
+							"stopwords":"_english_"
+						}
+					}
+				}
+			},
+			"mappings":{
+				"my_type":{
+					"properties":{
+						"my_text":{
+							"type":"text",
+							analyzer:"standard",
+							"fields":{
+								"english":{
+									"type":"text",
+									"analyzer":"std_english"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		
+		
+		
+	标准分析器有哪些Tokenizer？
+	
+		1：Standard Analyzer:
+		
+			Tokenizer:
+				Standard Tokenizer
+				
+			Token Filters:
+				Standard Token Filter
+				Lower Case Token Filter
+				Stop Token Filter
+			
+		例子：
+			
+			POST _analyze
+			{
+				"analyzer":"standard",
+				"text":"I'm a Teacher 666."
+			}
+			
+			
+					↓
+					
+			[I'm ,a,Teacher,666]
+			
+			
+					↓
+					
+			[i'am,a,teacher,666]
+			
+			
+			
+		
+		2：Simple Analyzer:（只识别单词）
+		
+			Tokenizer:
+				
+				Lower Case Tokenizer
+				
+				
+		
+		例子：
+			POST _analyze
+			{
+				"analyzer":"simple",
+				"text":"I'am a Teacher 666."
+			}
+			
+					↓
+					
+			[i,am,a,teacher]
+			
+			
+			
+		3:Stop Analyzer:
+		
+			Tokenizer:
+				
+				Lower Case Tokenizer
+				
+			Token Filters:
+			
+				Stop Token Filter
+				
+		例子：
+			POST _analyze
+			{
+				"analyzer":"stop",
+				"text":"I'm a Teacher 666."
+			}
+		
+					↓
+					
+			[i,am,a,teacher]
+			
+					↓
+					
+			[i,am,teacher]
+			
+			
+		
+		自定义Analyzer:
+		
+			分析器包含三部分：文本预处理，分词，对分词二次处理。
+		
+			Character Filter:
+			
+				HTML Strip Character Filter
+				
+			Tokenizer:
+			
+				Standard Tokenizer
+				
+			Token Filters:
+			
+				Lower Case Token Filter
+				Stop Token Filter
+				
+				
+			例子：
+			
+				PUT my_index
+				{
+					"settings":{
+						"analysis":{
+							"analyzer":{
+								"my_custom_analyzer":{
+									"type":"custom",
+									"tokenizer":"standard",
+									"char_filter":["html_strip"],
+									"filter":["lowercase","stop"]
+								}
+							}
+						}
+					}
+				}
+				
+				POST my_index/_analyze
+				{
+					"analyzer":"my_custom_analyzer",
+					"text":"I'm a<b>Teacher</b>666."
+				}
+				
+	
+	
+	
+	
+	Elasticsearch-Doc Values
+	
+		Doc					Terms
+		Doc_1				brown,dog,fox,jumped,lazy,over,quick,the
+		Doc_2				brown,dogs,foxes,in,lazy,leap,over,quick,summer
+		Doc_3				dog,dogs,fox,jumped,over,quick,the
+		
+		
+		Doc values 可以用于聚合、排序、访问字段值的脚本，子夫关系处理等。（任何需要查找某个文档包含的值的操作），
+		对倒排索引做了一次二次的倒排 -> 做了一次倒排索引的倒排索引。
+		
+	
+	
+	
+	ElasticSearch数据类型
+	
+		string(text,keyword)
+			text:经过分词器
+			keyword：不经过分词，默认启用doc values
+		
+		number(integer,long,short,byte,double,float)
+			整型默认long，小数点默认float
+		
+		date(默认格式：strict_date_optional_time||epoch_millis)
+			strict_date_optional_time：
+				严格的时间类型定义，包含了二十几种类型的时间转型器，默认ISO_8601的时间格式
+				
+			epoch_millis：
+				从1970年1月1日至今所经历的毫秒数
+				
+		
+		boolean
+		
+		ip（支持ipv4或 ipv6）
+			0.0.0.0 - 255.255.255.255,支持IP搜索，有专门的IP解析器
+		
+		geo_point
+			地理位置，坐标(x,y)
+		
+		nested
+			嵌套类型
+		
+		object
+			json对象
+		
+		binary
+			二进制
+			
+			
+			
+	String类型详解：
+		text:
+			默认启用分析，适用于全文搜索
+		keyword：
+			存什么是什么，存精确值的。例如：电子邮箱，邮政编码，枚举。。
+			
+			
+	Number类型详解：
+		long
+		integer
+		short
+		byte
+		double
+		float
+		
+		整型默认long，小数点默认float，尽量使用与自己数据相对应的数据类型，这样能够节省存储空间。
+		
+	boolean类型详解
+	
+		PUT my_index
+		{
+			"mappings":{
+				"my_type":{
+					"properties":{
+						"is_published":{
+							type:"boolean"
+						}
+					}
+				}
+			}
+		}
+		
+		POST my_index/my_type/1
+		{
+			"is_published":true
+		}
+		
+		
+	
+	date格式：
+		默认格式：strict_date_optional_time||epoch_millis
+		例如：2019-10-15T21:12:00.Z||1496055518000
+		
+		自定义格式：
+		
+			{
+				"mappings":{
+					"properties":{
+						"study_date":{
+							"type":"date",
+							format:"yyyy-MM-dd HH:mm:ss||strict_date_optional_tem||epoch_millis"
+						}
+					}
+				}
+			}
+			
+	IP格式：
+		
+		PUT my_index
+		{
+			"mappings":{
+				"my_type":{
+					"properties":{
+						"ip_addr":{
+							"type":"ip"
+						}
+					}
+				}
+			}
+		}
+		
+		PUT my_index/my_type/1
+		{
+			"ip_addr":"192.168.1.1"
+		}
+		
+		GET my_index/_search
+		{
+			"query":{
+				"term":{
+					"ip_addr":"192.168.0.0/16"
+				}
+			}
+		}
+		
+		注意：
+			/16按照范围搜索IP
+			
+	
+	
+	Binary格式：
+	
+		可以存储Base64编码的字符串。默认不能进行搜索。
+		
+		PUT my_index
+		{
+			"mappings":{
+				"my_type":{
+					"properties":{
+						"name":{
+							type:"text"
+						},
+						"blob":{
+							"type":"binary"
+						}
+					}
+				}
+			}
+		}
+		
+		
+		PUT my_index/my_type/1
+		{
+			"name":"Some binary blob",
+			"blob":"U29tZSBiaW5hcnkgYmxvYg=="
+		}
+		
+		
+		
+	geo_point格式：
+	
+		mapping定义：
+			{
+				"mapping":{
+					"my_type":{
+						"properties":{
+							"location":{
+								"type":"geo_point"
+							}
+						}
+					}
+				}
+			}
+		
+		比如：
+			lon(经度)-71.34,lat(纬度)41.12，支持一下格式输入
+			object:{"lat":41.12,"lon":-71.34}
+			string:"41.12,-71.34"	--lat,lon
+			array:[-71.34,41.12]	--[lon,lat]
+			
+			
+	
+	object类型：
+	
+		例如：
+			{
+				"city":"beijing",
+				"user":{
+					"age":26,
+					"name":{
+						"first":"zhang",
+						"last":"san"
+					}
+				}
+			}
+			
+		在ES中扁平化存储为：
+			{
+				"city":"beijing",
+				"user.age":26
+				"user.name.first":"zhang",
+				"user.name.last":"san"
+			}
+			
+		
+		{
+			"mappings":{
+				"my_type":{
+					"properties":{
+						"city":{
+							"type":"keyword"
+						},
+						"user":{
+							"properties":{
+								"age":{
+									"type":"integer"
+								},
+								"name":{
+									"properties":{
+										"first":{
+											"type":"text"
+										},
+										"last":{
+											"type":"text"
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		
+		
+		
+		
+	nested类型使用场景：
+	
+		例如：
+			"users":[
+				{"age":25,"name":"zhangsan"},
+				{"age":26,"name":"lisi"}
+			]
+			
+			在ES中扁平化存储为：
+			
+			{
+				"user.age":[25,26]
+				"user.name":["zhangsan","lisi"]
+			}
+			
+			在此时搜索age=25 and name=zhangsan 的时候，lisi也会搜出来
+			
+			
+			
+	ElasticSearch-内置字段
+		_index
+		_tyoe
+		_id
+		_all
+		_source
+		_field_names
+		_ttl
+		_meta
+		_uid
+		_routing
+		
+		注意：
+			命名尽量不要用_了。。容易混。
+			
+			
+			
+			
+ElasticSearch-元数据
+
+	集群状态元数据：
+	
+		index、mapping、templates、alais、settings、cluster status、nodes status、shards status
+		
+	元数据更新：
+	
+		对元数据的修改，当且仅当master才有权力更改元数据
+		
+		master维护元数据的版本，更新后版本+1
+		
+		master更新元数据后，会复制到其他所有节点
+		
+		使用gateway持久化元数据
+		
+		
+		
+		
+ElasticSearch-模板
+
+	动态模板：
+	
+		PUT my_index
+		{
+			"mappings":{
+				"_default_":{	#_*_优先匹配这个属性
+					"_all":{
+						"enabled":false
+					}
+				},
+				{
+					"user":{},
+					"blogpost":{	#在自己的type下定义一个_all，进而覆盖
+						"_all":{
+							"enable":true
+						}
+					}
+				}
+			}
+		}
+		
+		
+		
+		
+		PUT _template/logging
+		{
+			"template":"logs-*",
+			"settings":{
+				"number_of_shards":1
+			},
+			"mappings":{
+				"_default_":{
+					"_all":{
+						"enabled":false
+					}
+				}
+			},
+			"dynamic_template":[
+				{
+					"strings":{
+						"match_mapping_type":"string",
+						"mapping":{
+							"type":"text",
+							"fields":{
+								"raw":{
+									"type":"keyword",
+									"ignore_above":256
+								}
+							}
+						}
+					}
+				}
+			]
+		}
+		
+		
+		
+
+
+
+
+------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+ElasticSearch-索引原理
+
+索引分片
+数据路由
+查询与写入过程
+实时索引原理
+准实时查询原理
+事务日志
+段合并
+
+
+
+ElasticSearch索引分片：
+
+	索引分片-水平扩展
+	
+	
+		NODE1 = *MASTER		- yellow
+		
+			3片，1副本
+			
+			p0、p1、p2
+			
+			启动后三个主分片全部在NODE1节点
+			
+			
+		NODE2		- NODE1 + NODE2 = grren
+		
+			3片、1副本
+			
+			R0、R1、R2
+			
+			NODE2承载了所有副本的工作
+			
+			
+			
+		启动NODE3 -> 3片，1副本
+		
+			NODE3
+			
+			NODE3 -> P0	R2
+			NODE2 -> R0	R1
+			NODE1 -> P1	P2
+			
+			
+			
+		3片2副本
+		
+			NODE1 = MASTER
+			
+				R0 P1 P2
+			
+			NODE2
+				
+				R0 R1 R2
+				
+			NODE3
+			
+				P0 R1 R2
+				
+				
+			最大性能就是每个机器一个片
+	
+
+
+	索引分片-对应故障：
+	
+		3片2副本 -> 三个机器
+		
+			NODE1 = MASTER		R0 P1 P2
+			NODE2				R0 R1 R2
+			NODE3				P0 R1 R2
+			
+		假如 MATSER1 挂掉了,重新选举MASTER，按照算法，副本提升为主分片
+		
+			NODE2 = MASTER		R0 R1 P2
+			NODE3				P0 P1 R2
+			
+		加入NODE1恢复了，尝试用原来分片，然后把其他分片的数据尝试同步过来
+		如果数据不能用，将会全部复制还原一遍
+		
+		
+	文档路由策略：
+	
+		NODE1=MASTER	R0 		P1(?) 	P2(?)
+		NODE2			R0 		R1 		R2
+		NODE3			P0(?)	R1 		R2
+		
+		
+		写分片的时候，什么数据能够写到P1,什么数据能够写到P2，什么数据能够写到P0上？
+		有什么规则？
+		首先不是随机的，不然没法搜索。
+		*路由公式：
+			shard = hash{routing} % number_of_primary_shards
+			
+		*默认routing值是_id,也可以手工指定
+		
+		*确认好主分片的数量，永远不会改变
+
+
+	
+	索引写入过程
+	
+		NODE1=MASTER		R0		P1
+		NODE2				R0		R1
+		NODE3				P0		R1
+		
+		数据文档写入集群，加入第一次请求到的节点是NODE1，进行ID的hash算法求分片，
+		加入计算完分片为P0，NODE1就会把请求发给NODE3，去找到P0主分片，当NODE3的
+		主分片P0写入完毕数据之后，发送一个请求，把数据转发给它的副本分片R0来保存
+		默认情况下，只要一台机器返回成功信息，NODE3就会把信息返回给发送请求的NODE1
+		来返回给客户端信息。
+		
+		针对出现部分副本成功，提供了一个参数
+			(主分片 + 副本分片) / 2		-> 向下取整 1.5 = 1
+			
+			CAP 
+				C：数据一致性（我写入其中一台机器，另外两台机器也必须一致）
+				A：服务可用性（我在访问某一台机器的时候，一定在某一个时间给我一个响应）
+				P：分区容错性（当内部集群网络出现异常，丢包。机器和机器连接不上了，就会分出多个区）
+					请求到了服务器。每一台机器都应得到一致的结果
+				所有的分布式系统最多满足俩。。。
+				
+			关系型数据库是强一致性的：（CA）
+				写进去就能读出来
+				必须告诉我服务是可用的
+				他就不能出现某个分区
+				
+	
+	索引查询过程-查询阶段
+	
+		NODE1=MASTER		R0		P1
+		NODE2				R0		R1
+		NODE3				P0		R1
+		
+		
+		假如说我们请求到了NODE3，谁第一次接收到请求，谁就是一个协调节点。NODE3这时候就是一个协调节点，
+		我们对一个索引进行搜索，NODE3知道索引的分片，并行的发送给另外两个节点。有可能是主分片，也有可
+		能是副本分片，要查询10W后去1W的数据。
+		Node3把请求发给NODE1和NODE2，在NODE1上面创建一个11W大小的队列长度（ID），NODE2也创建一个11W大
+		小的队列长度（ID），把11W条数据取出来，分数打上，然后一并转给NODE3（协调节点），NODE3收到了22W
+		个ID和22W个评分。他把22W条ID根据评分进行排序。排序完毕之后，取10W - 11W 之间的 1W条数据。
+		
+		为什么这么做。。。
+		
+			因为对于分页来说，有可能前11W数据都在NODE1上，也有可能都在NODE2上，也有可能一部分NODE1，
+			一部分NODE2。。。为了保险起见，先合并数据。。再由协调节点统一排序筛选取值。
+			
+			
+	
+	
+	索引查询过程-取回阶段
+	
+		NODE3得到了1W个ID。。。然后NODE根据ID能知道具体数据在哪个分片上。自动的去做一个MGET操作。。
+		把文档取回之后，NODE3包装数据，返回给客户端。。
+		
+		
+		分页不要太深。。尽量用游标。
+		
+		
+	
+	索引查询过程-多文档获取
+	
+		NODE1=MASTER		R0		P1
+		NODE2				R0		R1
+		NODE3				P0		R1
+		
+		请求访问一般都会做个负载，加入请求到了NODE1（协调节点），得到一堆ID，根据路由策略得到ID的文档所在
+		位置。平行发送请求，取回文档，包装整理，返回客户端。。
+		
+		
+		
+		
+	索引查询过程-多文档bulk
+	
+		NODE1=MASTER		R0		P1
+		NODE2				R0		R1
+		NODE3				P0		R1
+		
+		批处理。。批量的增删改查
+		
+		加入批量创建文档，第一次请求发送到了NODE1（协调节点）上，根据ID进行路由策略，发送到对应的分片，
+		加入给到了NODE3的P0主分片，主分片写入成功，同时并行的发送数据给NODE1的R0副本和NODE2的R0副本，
+		让他们也写入成功。（写入几个分片返回成功，可以设置）写入成功后，NODE3接收到成功信息，返回给NODE1，
+		NODE1（协调节点）返回成功信息给客户端。
+		
+		
+		
+	
+	***索引原理：
+	
+		动态更新索引，不修改已经生成好的倒排索引，而是生成一个段（segment）
+		
+		每一个段（segment）都是一个倒排索引。对于ES来讲，多个段就是一个shards，对于lucene来讲
+		一个索引包含了很多个段
+		
+		ES另外使用一个commit文件，记录索引内所有的segment。
+		（见：12索引分片-索引原理）
+		一个ES索引是多个分片的集合，一个分片就是一个lucene索引，一个lucene索引包含多个段(segment)
+		
+		生成segment的数据是内存中的buffer。
+		当内存到达一定大小或者到达某个时间点，commit point提交点，将内存中的数据全部写到磁盘里面去，
+		产生一个新的段(segment)。
+		
+		用到磁盘就会比较慢，怎么做到实时的搜索？
+		
+		准实时查询原理：
+		
+			在内存区里面的数据不会进行搜索。这时候没有同步到磁盘，也没有倒排索引。
+			默认是每1s，把内存的数据写到内存的一个倒排索引里面去。相当于在文件缓存里，可以对外搜索。
+			这个过程叫做refresh，定义索引的时候可以定义分片个数，也可以定义刷新的秒数。-1为永远不刷新
+			但是这个过程可能会丢失数据。
+			
+			
+	准实时查询原理：
+	
+		segment刷新到文件系统缓存
+		
+		refresh_interval默认1s间隔，可以手工设置
+		
+		PUT /my_index/_settings
+		{
+			"index":{
+				"refresh_interval":"30s"
+			}
+		}
+		
+		主动调用/_refresh接口刷新到缓存
+		POST /refresh
+		POST /blogs/refresh
+		
+		可以使用 "refresh_interval": "-1" 禁用刷新
+		
+		
+		
+	怎么做到防止数据丢失？
+	
+		事务日志：Translog
+		
+			新的文档被添加到内存缓冲区并且被追加到了事务日志
+			
+			当我们做一次refresh的时候，是把内存的数据写到了文件缓存里面去了，但是事务日志并不缓存。
+			事务日志不断积累文档，在刷新(refresh)之后，段被全量提交，并且事务日志被清空。
+			
+			Translog在磁盘，有一个flush操作。
+			
+			Translog可以恢复丢失的数据。
+			
+			
+		日志事务总结：
+		
+			lunce的commit操作非常昂贵，segment从文件系统缓存刷新到磁盘，更新commit
+			
+			translog记录发生在索引上的各种操作
+			
+			每个不同的shard都有自己的事务日志
+			
+			默认5秒进行一次fsync(写入到磁盘)（index.translog.sync_interval），有可能丢失5秒钟的数据。。。
+			
+			默认 512MB进行一次Flush（index.traslog.flush_threshold_size）
+			
+			主动调用 /flush接口
+			
+			异步translog
+			
+			PUT /my_index/_settings
+			{
+				"index.translog.durability":"async",
+				"index.translog.sync_interval":"5s"
+			}
+			
+			
+	ElasticSeach-段合并：
+	
+		段合并过程：
+		
+			过多segment影像数据读取的性能，占用文件句柄、内存资源
+			
+				合并的时候会忽略掉del文件里面的数据。删除的时候，空间不会啊减少，
+				只有在merge的时候，才会真正的把删除的文档删掉。
+			
+			专门merge线程池负责
+				非常耗资源。。。
+			
+			手工调用接口：
+			
+				新版本_forcemerge接口
+				老版本_optimize接口
+				
+				POST /my_index/_forcemerge?max_num_segments=1
+				
+		
+		段合并配置：
+		
+			合并线程数量：
+				index.merge.scheduler.max_thread_count
+				默认值：Math.min(3,Runtime.getRuntime().availableProcessors() / 2);
+				
+			合并线程的限速配置：
+				5.0之前indices.store.throttle.max_bytes_per_sec=20mb
+				5.0之后不用配置，使用了Lucene的CMS（ConcurrentMergeScheduler）的auto throttle机制
+				
+				策略：
+					
+					meger默认最大segment为5GB，最多同时合并10个段
+			
+					forcemerge有单独的一个线程运行
+					
+	
+	
+	索引的删除与更新：
+	
+		在删除或更新时：
+		
+			段(segment)是不可改变的，不能把旧文档从段中删除，也不能修改段中的文档。
+			
+			每个提交点包含一个.del文件，就文档设置删除标记。
+			
+			更新的文档写入到当前开启的段。
+			
+			此时查询，内部会将这个就文档匹配到，但在最终结果返回时，过滤掉。
+			
+			在后台段合并时，文档会真正删除。
+			
+			
+			
+---------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+搜索查询
+聚合分析
+
+
+Elastic搜索查询：
+
+	全文查询：
+	
+		如果查询日期(date)或整数（integer）字段，他们会将查询字符串分别作为日期或整数对待。
+		
+		如果查询一个（not)analyzed）未分析的精确值字符串字段，他们将会查询字符串作为单个词对待。
+		
+		但如果要查询一个（analyzed）已分析的全文字段，他们会先将查询字符串传递到一个合适的分析器，
+		然后生成一个供查询的词项列表。
+		
+		query_string query支持紧凑的Lucene查询字符串语法
+		match query 用于执行全文查询的标准查询，包括模糊匹配和短语或临近查询。
+		match_phrase query像匹配查询一样，但用于匹配确切的短语或单词接近度匹配。
+		match_phrase_prefix query像match_phrase查询一样，但是对最后一个单词进行通配符搜索。
+		multi_match query多字段版本的匹配查询。
+		
+		
+	querystring语法：
+	
+		全文检索：（只要有包含zhangsan的全部返回）
+			GET /school/_search?q=zhangsan
+		
+		单字段全文索引：（我只查询name字段里面是zhangsan的数据）
+			GET /school/_search?q=name:zhangsan
+		
+		单字段精确检索：（mark字段里面含有 good day 才返回）
+			GET /school/_search?q=mark:"good day"
+			
+		多个检索条件的组合：（name里面有zhangsan，lisi 并且 课程不是spring的）
+			GET /school/_search?q=name:("zhangsan" OR "list") AND NOT course:spring
+		
+		字段是否存在：（mark字段存不存在）
+			GET /school/_search?q=_exists_:mark
+			GET /school/_search?q=NOT _exists_:mark
+			
+		通配符：
+			用 ? 表示单字母，*表示任意个字母
+			GET /school/_search?q=name:zh???san
+			GET /school/_search?q=name:zh*san
+			
+		正则搜索：
+			用//包裹
+		ES中正则性能不高，尽量不要使用
+		
+		保留字符：
+			.?+*|{}[]()"\#@&<>~
+			
+		转义字符用\，例如 \*\\
+		
+			GET /school/_search?q=name:/zh.*san/
+			GET /school/_search?q=name:/zh...san/
+			
+			
+	
+	match_all搜索查询：
+	
+		#空查询
+		GET /school/_search
+		{
+			"query":{
+				"match_all":{}
+			}
+		}
+		
+		#不匹配任何文档
+		GET /school/_search
+		{
+			"query":{
+				"match_none":{}
+			}
+		}
+		
+		
+		#匹配查询
+		GET /school/_search
+		{
+			"query":{
+				"match":{
+					"mark":"Day"
+				}
+			}
+		}
+		
+		match 查询执行步骤：
+			
+			检查字段类型
+			
+				检查搜索条件mark包含 Day 的文档
+				检查Day的类型
+			
+			分析查询字符串
+				处理Day看是否分词
+			
+			查找匹配文档
+				倒排索引里面搜索
+			
+			为每个文档评分
+				Day、good Day，给文档打分返回排序
+				消耗资源没有任何缓存。filter可以利用缓存。
+				打分标准：
+					词频（出现多的评分低）
+
+	match多词匹配查询：
+	
+		#多词匹配
+		GET /school/_search
+		{
+			"query":{
+				"match":{
+					"mark":"good day"
+				}
+			}
+		}
+		
+		
+		#提高精度,文档里面必须含有good必须含有day
+		GET /school/_search
+		{
+			"query":{
+				"match":{
+					"mark":{
+						"query":"good day",
+						"operator":"and"
+					}
+				}
+			}
+		}
+		
+		#控制精度 搜三个词必须含有两个就返回
+		GET /school/_search
+		{
+			"query":{
+				"match":{
+					"mark":{
+						"query":"good happy day",
+						"minimum_should_match":"2"
+					}
+				}
+			}
+		}
+		
+	
+	match_phrase短语匹配：
+	GET /school/_search
+	{
+		"query":{
+			"match_phrase":{
+				"match" : "good day"
+			}
+		}
+	}
+	
+	
+	#
+	GET /school/_search
+	{
+		"query":{
+			"match_phrase":{
+				"mark":{
+					"query":"good day",
+					"slop":1
+				}
+			}
+		}
+	}
+	
+	执行步骤：
+		
+		分析查询字符串，分解成词项
+		
+		查找匹配文档
+		
+		只保留包含全部词项的文档，并且词项位置也相同（good和day必须要挨着）
+		
+		slop指定词项间隔离的范围
+			slop = 1
+				good happy day 可以返回
+			slop = 0
+				good day可以返回
+				
+				
+	
+	match_phrase_prefix短语前缀匹配查询：
+	
+		GET /school/_search
+		{
+			"query":{
+				"match_phrase_perfix":{
+					"mark":{
+						"query":"t",
+						"slop":1,
+						"max_expansions":50
+					}
+				}
+			}
+		}
+		
+		执行步骤：
+			分析查询字符串，查找前50个前缀是t的词项
+			只保留包含全部词项的文档，并且词项位置也相同
+			
+			
+			
+	
+	Multi Match查询：
+	
+		GET /school/_search
+		{
+			"query":{
+				"multi_match":{
+					"query":"elasticsearch",
+					"fields":["mark","co*"]
+				}
+			}
+		}
+		
+		在多个字段上执行match查询，字段名可以写通配符
+		
+		
+		
+	term精确查询：
+	
+		term查询被用于精确值匹配，这些精确值可以是数字（number）、日期（date）、布尔值（bool）、
+		未经过分析的字符串（keyword）
+		
+		term查询对于输入的文本不分析，所以他将给定的值进行精确查询。
+		
+		SELECT document from school WHERE age = 25;
+		
+		GET /school/_search
+		{
+			"query":{
+				"term":{
+					"age":19
+				}
+			}
+		}
+		
+		
+		例子：
+			
+			SELECT document FROM school WHERE mark='happy day';
+			
+			GET /school/_search
+			{
+				"query":{
+					"term":"happy day"
+				}
+			}
+			
+			由于term查询不需要进行查询词的分析，mapping定义中，mark字段是text，是经过词分析的，
+			索引在倒排索引中没有happy day这个词。，所以该查询查不出任何的结果。keyword和text。。。
+			
+			
+			
+	terms查询：
+		
+		GET /school/_search
+		{
+			"query":{
+				"terms":{
+					"name":["zhangsan","lisi"]
+				}
+			}
+		}
+		
+		
+		terms查询和term查询一样，但它允许你指定多值进行匹配。
+		
+		如果这个字段包含了指定值中的任何一个值，那么这个文档满足条件。
+		
+		和term查询一样，terms查询对于输入的文本不分析。
+		
+		
+		
+	range范围查询：
+	
+		GET /school/_search
+		{
+			"query":{
+				"range":{
+					"age":{
+						"gte":20,
+						"lt":30
+					}
+				}
+			}
+		}
+		
+		
+		GET /school/_search
+		{
+			"query":{
+				"range":{
+					"study_date":{
+						"gte":"2019-10-15",
+						"let":"2018",
+						"format":"yyyy-MM-dd||yyyy"
+					}
+				}
+			}
+		}
+		
+		
+		GET /school/_search
+		{
+			"query":{
+				"range":{
+					"gte":"now-10d/d",
+					"lt":"now+1M/d"
+				}
+			}
+		}
+		
+		
+		范围查询可以用于数字、日期等类型的字段
+		gt:大于，gte：大于等于，lt：小于，lte：小于等于
+		
+		
+		now-10d/d -> -10天，初始化为00:00:00
+		now+1M/m  -> 一个月之后的 23:59:59
+		now+1M/d  -> 一个月之后的 00:00:00
+		
+		
+		
+	exists查询：
+	
+		GET /school/_search
+		{
+			"query":{
+				"exists":{
+					"filed":"name"
+				}
+			}
+		}
+		
+	missing查询
+	
+		GET /school/_search
+		{
+			"query":{
+				"bool":{
+					"must_not":{
+						"exists":{
+							"filed":"mark"
+						}
+					}
+				}
+			}
+		}
+		
+		匹配的文档必须在某个字段含有值，空值也算。
+		
+		
+		
+	prefix前缀查询：
+	
+		GET /school/_search
+		{
+			"query":{
+				"prefix":{
+					"name":"zhang"
+				}
+			}
+		}
+		
+		
+	
+	wildcard通配符查询：
+	
+		GET /school/_search
+		{
+			"query":{
+				"wildcard":{
+					"name":"zh*san"
+				}
+			}
+		}
+		
+		
+	Regexp正则查询：
+	
+		GET /school/_search
+		{
+			"query":{
+				"regexp":{
+					"name":{
+						"value":"z.*san"
+					}
+				}
+			}
+		}
+		
+		
+	Fuzzy模糊查询（近似匹配）：
+	
+		GET /school/student/_search
+		{
+			"query":{
+				"fuzzy":{
+					"name":{
+						"value":"zhangsi",
+						"fuzziness":2
+					}
+				}
+			}
+		}
+		
+		搜索的时候，打字打错了。zhangsan -> zhangsi
+		变相去找相近的词。
+		
+		
+	
+	Constant Score Query-组合查询
+	
+		GET /school/_search
+		{
+			"query":{
+				"constant_score":{
+					"filter":{
+						"term":{
+							"mark":"day"
+						}
+					}
+				}
+			}
+		}
+		
+		通常当查找一个精确值的时候，我们不希望对查询进行评分计算，使用constant_score，可以
+		对文档不进行评分计算，返回统一的评分，都是1，增加执行效率。并且filter可以缓存在es的内存里面，
+		下一次搜索会通过内存取出数据，能用filter就用filter。es有两种上下文，第一种QeuryContext,
+		另一种是FilterContext。
+		
+		
+	Bool组合查询：
+	
+		POST /_search
+		{
+			"query":{
+				"bool":{
+					"must":[{...}],
+					"filter":[{...}],
+					"must_not":[{...}],
+					"should":[... , ...],
+					"minimum_should_match":1
+				}
+			}
+		}
+		
+		must:所有的语句都必须（must）匹配，与AND等价。
+		must_not:所有的语句都不能（must not）匹配，与NOT等价。
+		should:至少有一个语句要匹配，与OR等价。
+		
+		
+		
+	总结：
+		查询与过滤：
+		
+			query搜索需要计算相关度评分并排序，无法使用缓存。
+			filter过滤无需计算相关度评分，可以使用缓存。
+			
+		尽量使用Bool组合代替AND OR
+			
+			bool使用must、must_not、should、filter条件可以复用，结果保存在bitset中，
+			做交集相率高。
+			
+			and/or逐个文档处理、检查是否匹配，效率低。把过滤的文档条件放在最前面。
+			
+		原则上来说，使用查询语句来做全文本搜索或其他需要进行相关性评分，剩下的全部用过滤语句。
+		
+		
+		
+		match查询和term查询的区别？
+			
+			match查询对词分析后开始查询
+			term查询不需要词分析
+			
+		无计算分数用哪种查询？
+			
+			filter查询
+			
+			
+------------------------------------------------------------------------------------------------------------
+
+
+ElasticSearch-聚合分析：
+
+	每一个聚合都是一个或者多个桶和零个或者多个指标的组合。
+				
+	桶（Buckets）:
+		
+		满足特定条件的文档的集合
+		一大堆东西按照类别分类，不同类别的东西放在不同的桶里。
+		
+	指标（Metrics）：
+	
+		对桶内的文档进行统计计算
+	
+	
+	SELECT COUNT(filed) FROM table GROUP BY filed;
+	
+	COUNT(field) -> 指标（Metrics）：
+	
+	GROUP BY field -> 桶（Buckets）；
+	
+	
+	
+聚合语法结构：
+
+	"aggregations":{	#聚合语法 aggs
+		"<aggregation_name>":{	#聚合的名字，自定义，可辨识就行
+			"<aggregation_type>":{	#聚合的类别，可以写按照什么方式分桶，包含了很多聚合函数
+				<aggregation_body>	#依据什么聚合，类似于group by xxx
+			}
+			[,"meta":{[<meta_data_body>]}]?		#自定义属性,结果返回
+			[,"aggregations":{[<sub_aggregation>]+ }]?	#子聚合，可以用指标来写，可以无限扩展，俄罗斯套娃
+		}
+		[,"<aggregation_name_2>": {...}]*	#多个聚合
+	}
+			
+			
+			
+
+	Bucket Aggregations - 分桶
+
+		Filter Aggregation - 过滤分桶
+			一般可以和filter或者term组合着使用。返回一个值的桶
+		
+		Filters Aggregation - 过滤分桶
+			指定多个。
+		
+		Date Histogram Aggregation - 按照日期自动划分桶
+			日志的一大堆文档，按照天数分，每一小时的划分一个桶，每个桶的时间周期一致
+			他会优化。
+		
+		Date Range Aggregation - 给定日期范围划分
+			给定一定的时间范围
+		
+		Histogram Aggregation - 直方图划分桶
+			直方图 -> 按照数字范围进行划分，10一个档次 -> 10 20 30 40 50 60 
+		
+		Range Aggregation	-	给定范围划分桶
+			> 50分的，30 - 50分
+		
+		IP Range Aggregation - 按照给定的IP范围分桶
+			ipv4 ipv6都可以。0.0.0.0 - 255.255.255.255
+		
+		Terms Aggregation - 按照做多的词分桶
+			在索引里某一个词用的特别多
+			按照用的词条最多的查出来
+			可以轻松的知道哪个文档用的多，哪个文档用的少
+		
+		Geo Distance Aggregation - 按地理位置指定的中心点圆环分桶
+			根据距离划分，根据点扩散一定公里，弄一个圆形的分桶方式。
+		
+		GeoHash grid Aggregation - 按 geohash 单元分桶
+			算法。把一个坐标点转换为一个hash字符串。
+			可以按照关键词返回矩形。
+			
+			
+
+
+
+	Metrics Aggregations - 指标（Metrics）：
+
+		Avg Aggregation - 平均值
+		Max Aggregation - 最大值
+		Min Aggregation - 最小值
+		Sum Aggregation - 求和
+		Cardinality Aggregation - 基数（去重值）
+			一堆文档里面某一个字段都含有多少种值
+			类似于 distinct
+			
+		Percentiles Aggregation - 百分位
+			把一堆的值。0 - 100，10分以下占百分之几。60分的百分之几
+			按照不同的等级可以看
+			
+		Percentile Ranks Aggregation - 百分位排名
+			你的QQ等级超越了你85%好友。。
+		
+		Stats Aggregation - 统计（包含min、max、sum、avg）
+			相当于写了前四种统计方式
+		
+		Geo Bounds Aggregation - 地理坐标边框
+			返回一个地理坐标的框
+		
+		Geo Centroid Aggregation - 图心
+		
+		
+		
+		
+		select count(color) from cars group by color;
+		
+		GET /cars/transactions/_search
+		{
+			"size":0,	#不返回任何的文档，只返回聚合的数据
+			"aggs" : {
+				"popular_colors":{
+					"term":{	#返回最常用的一些词
+						"field":"color"
+					}
+				}
+			}
+		}
+		
+		返回结果:
+		{
+			...
+				"hits":{
+					"hits":[]
+				},
+				"aggregations":{
+					"popular_colors":{
+						"buckets":[
+							{"key":"red","doc_count":4},
+							{"key":"blue","doc_count":2},
+							{"key":"green","doc_count":2}
+						]
+					}
+				}
+		}
+		
+		
+		添加指标：
+		
+			GET /cars/transactions/_search
+			{
+				"size":0,
+				"aggs":{
+					"colors":{
+						"term":{
+							"field":"color"
+						},
+						"aggs":{
+							"avg_price":{
+								"avg":{
+									"field":"price"
+								}
+							}
+						}
+					}
+				}
+			}
+			
+		
+		返回结果：
+		
+			{
+			...
+				"aggregations":{
+					"colors":{
+						"buckets":[
+							{
+								"key":"red",
+								"doc_count":4,
+								"avg_price":{
+									"value":32500
+								}
+							},{
+								"key":"blue",
+								"doc_count":2,
+								"avg_price":{
+									"value":20000
+								}
+							}
+						]
+					}
+				}
+				...
+			}
+			
+			
+			
+	嵌套桶：
+	
+		GET /cars/transactions/_search
+		{
+			"size":0,
+			"aggs":{
+				"color":{
+					"terms":{
+						"field":"color"
+					},
+					"aggs":{
+						"avg_price":{
+							"avg":{
+								"field":"price"
+							}
+						},
+						"make":{
+							"terms":{
+								"field":"make"
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		
+		返回结果：
+		
+		{
+		...
+			"aggregations":{
+				"color":{
+					"buckets":[
+						{
+							"key":"red",
+							"doc_count":4,
+							"make":{
+								"buckets":[
+									{
+										"key":"honda",
+										"doc_count":3
+									},
+									{
+										"key":"bmw",
+										"doc_count":1
+									}
+								]
+							},
+							"avg_price":{
+								"value":32500
+							}
+						},
+					]
+				}
+			}
+		}
+		
+		
+	为每个汽车生产商计算最低和最高的价格
+	先分桶再指标
+	GET /cars/transactions/_search
+	{
+		"size":0,
+		"aggs":{
+			"colors":{
+				"terms":{
+					"field":"color"
+				},
+				"aggs":{
+					"avg_price":{
+						"avg":{
+							"filed":"price"
+						}
+					},
+					"make":{
+						"terms":{
+							"filed":"mark"
+						},
+						"aggs":{
+							"min_price":{
+								"min":{
+									"field":"price"
+								}
+							},
+							"max_price":{
+								"max":{
+									"field":"price"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	
+	返回结果：
+	{
+	...
+		"aggregations":{
+			"colors":{
+				"buckets":[
+					{
+						"key":"red",
+						"doc_count":4,
+						"make":{
+							"buckets":[
+								{
+									"key":"honda",
+									"doc_count":3,
+									"min_price":{
+										"value":10000
+									},
+									"max_price":{
+										"value":20000
+									}
+								},{
+									"key":"bmw",
+									"doc_count":1,
+									"min_price":{
+										"value": 80000
+									},
+									"max_price":{
+										"value": 80000
+									}
+								}
+							]
+						},
+						"avg_price":{
+							"value":32500
+						}
+					}
+				]
+			}
+		}
+	}
+	
+	
+	histogram直方图
+	
+		GET /cars/transactions/_search
+		{
+			"size":0,
+			"aggs":{
+				"price":{
+					"histogram":{
+						"filed":"price",
+						"interval":20000
+					},
+					"aggs":{
+						"sum_price":{
+							"sum":{
+								"filed":"price"
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		返回结果：
+		{
+		...
+			"aggregations":{
+				"price":{
+					"buckets":[
+						{
+							"key":0,
+							"doc_count":3,
+							"sum_price":{
+								"value":37000
+							}
+						},
+						{
+							"key":20000,
+							"doc_count":4,
+							"sum_price":{
+								"value":95000
+							}
+						},{
+							"key":80000,
+							"doc_count":1,
+							"sum_price":{
+								"value":80000
+							}
+						}
+					]
+				}
+			}
+		}
+		
+		
+		
+	date_histogram直方图
+	每月销售多少辆汽车
+	GET /cars/transactions/_search
+	{
+		"size":0,
+		"aggs":{
+			"sales":{
+				"date_histogram":{
+					"field":"sold",
+					"interval":"month",
+					"format":"yyyy-MM-dd"
+				}
+			}
+		}
+	}
+	
+	
+	
+	返回结果：
+	{
+	...
+		"aggregations":{
+			"sales":{
+				"buckets":[
+					{
+						"key_as_string":"2014-01-01",
+						"key":1388534400000,
+						"doc_count":1
+					},
+					{
+						"key_as_string":"2014-02-01",
+						"key":1391212800000,
+						"doc_count":1
+					},
+					{
+						"key_as_string":"2014-05-01",
+						"key":1398902400000,
+						"doc_count":1
+					},
+					{
+						"key_as_string":"2014-07-01",
+						"key":1404172800000,
+						"doc_count":1
+					},
+					...
+				]
+				...
+			}
+		}
+	}
+	
+	
+	按季度、按每个汽车品牌计算销售总额：
+		
+		GET /cars/transactions/_search
+		{
+			"size":0,
+			"aggs":{
+				"sales":{
+					"date_histogram":{
+						"field":"sold",
+						"interval":"quarter",
+						"format":"yyyy-MM-dd",
+						"min_doc_count":0,	#当季度数据为0也返回数据
+						"extended_bounds":{
+							"min":"2014-01-01",
+							"max":"2014-12-31"
+						}
+					},
+					"aggs":{
+						"per_make_sum":{
+							"terms":{
+								"field":"make"
+							},
+							"aggs":{
+								"sum_price":{
+									"sum":{
+										"field":"price"
+									}
+								}
+							},
+							"total_sum":{
+								"sum":{
+									"field":"price"
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		
+		返回结果：
+		{
+		...
+			"aggregations":{
+				"sales":{
+					"buckets":[
+						{
+							"key_as_string":"2014-01-01",
+							"key":1388534400000,
+							"doc_count":2,
+							"total_sum":{
+								"value":105000
+							},
+							"per_make_sum":{
+								"buckets":[
+									{
+										"key":"bmw",
+										"doc_count":1,
+										"sum_price":{
+											"value":80000
+										}
+									},
+									{
+										"key":"ford",
+										"doc_count":1,
+										"sum_price":{
+											"value":25000
+										}
+									}
+								]
+							}
+						}
+					]
+				}
+			}
+		}
+
+
+
+
+
+----------------------------------------------------------------------------------------------
+
+
+Elasticsearch-集群管理
+
+	集群管理
+	数据备份
+	升级维护
+	备份恢复
+	数据迁移
+	数据重建
+	冷热分层
+	健康监控
+	集群优化
+	
+	
+	查看集群健康的api:
+	http://192.168.112.148:9200/_cluster/health?pretty
+	
+	查看集群状态api:
+	http://192.168.112.148:9200/_cluster/state?pretty
+	
+	查看集群统计信息api:
+	http://192.168.112.148:9200/_cluster/state?human&pretty
+	
+	查看集群待更新元数据任务api:
+	http://192.168.112.148:9200/_cluster/pending_tasks?pretty
+	
+	
+
+动态集群参数：
+	
+	PUT /_cluster/settings
+	{
+		"transient":{
+			"indices.recovery.max_byte_per_sec":"50mb"
+		},
+		"persistent":{
+			"discovery.zen.minimum_master_nodes":2
+		}
+	}
+
+
+
+创建备份仓库：
+	
+	PUT /_snapshot/my_backup
+	{
+		"type":"fs",	#本地磁盘
+		"settings":{
+			"location":"/mnt/elastic_backup",	#挂载的目录，所有节点都需要配置。配置文件的repostory要对应上。
+			"compress":true	#是否启用压缩
+		}
+	}
+	
+	#查询当前仓库
+	GET /_snapshot/
+	
+	
+快照备份
+
+	wait_for_completion=true	#false异步返回,true同步返回
+
+	PUT /_snapshot/my_backup/snapshot_1?wait_for_completion=true
+	{
+		"indices":"index_1,index_2",	#指定索引保存
+		"ignore_unavailable":true,		#忽略不可用，默认false
+		"include_global_state":false	#包含全局的元数据，分片集群是否包含在本次快照里
+	}
+	
+	#查看快照
+	GET /_snapshot/my_backup/_all?pretty=true
+	
+	
+快照恢复：
+
+	POST /_snapshot/my_backup/snapshot_1/_restore
+	{
+		"indices":"index_1,index_2",				#指定索引
+		"ignore_unavailable":true,					#没有找到索引也继续进行
+		"include_global_state":false,				#是否包含全局元数据
+		"rename_pattern":"index_(.+)",				#重命名的正则表达式
+		"rename_replacement":"restore_index_$1",	#恢复索引
+		"index_settings":{							#索引级别参数
+			"index.number_of_replicas":0			#恢复索引不要有任何副本
+		},
+		"ignore_index_settings":[					#快照包含settings，
+			"ignore_refresh_interval",				#刷新周期，默认每一秒一个segment
+			"index.routing.allocation.include._ip"	#索引分片的分配规则，根据ip分配
+		]
+		
+	}
+	
+	
+	
+	
+ElasticSearch-升级维护
+
+	1：停止业务，全集群重启升级
+		所有集群全部停止，把新的es包装上。。。。
+		跨版本的升级。
+	
+	2：滑动升级
+		不影响业务的情况下，一台一台升级。
+		
+		
+	滑动升级：
+	
+		1：停止索引新的数据。（可以帮助提高恢复速度）
+		2：禁止分片分配。禁止副本分片重新分片，等待原主分片重新启动。
+		
+			PUT /_cluster/settings
+			{
+				"transient":{
+					"cluster.routing.allocation.enable":"none"
+				}
+			}
+			3:关闭单个节点。
+			4：执行维护/升级。
+			5：重启节点，然后确认它加入到集群了。
+			6：用如下命令重启分片分配：
+				PUT /_cluster/settings
+				{
+					"transient":{
+						"cluster.routing.allocation.enable":"all"
+					}
+				}
+			7:分片再平衡会花一些时间。一直等到集群变成 绿色 状态后再继续。
+			
+
+ElasticSearch-节点下线：
+
+	节点转移
+
+	集群级别：
+	
+		PUT /_cluster/settings
+		{
+			"transient":{
+				"cluster.routing.allocation.exclude._ip":"192.168.112.151"
+			}
+		}
+		
+	索引级别：
+	
+		PUT /my_index/_settings
+		{
+			"index.routing.allocation.exclude._ip":"192.168.112.151"
+		}
+		
+		
+		
+		
+ElasticSearch-节点上线：
+
+	新节点上线，要避免新创建索引。
+	
+	防止新索引所有的主分片都配置到这台新节点上。
+	
+	解决方法：
+		配置好单节点分片的限额。
+		
+	例如：一个5节点的集群，索引主分片10个，副本1份。则平均下来每个节点应该有四个分片。
+	
+	PUT /my_index/_settings
+	{
+		"index":{
+			"routing":{
+				"routing.allocation.total_shards_per_node":"5"
+			}
+		}
+	}
+	
+	
+	
+ElasticSearch-分片分配
+
+	利用reroute接口，可以手动完成对分片的分配选择的控制。
+	
+	三种指令：
+		move、cancel、allocate_replica。
+		
+		move：
+			把一个节点的分片转移到另外一个节点上去。
+		cancel：
+			取消已经分配好的分片
+		allocate_replica：
+			手动指定分片位置。
+		
+	cancel指令默认只控制副本，需要明确指定allow_primary参数才能控制主分片。
+	
+	POST /_cluster/reroute
+	{
+		"commands":[
+			{
+				"allocate_replica":{
+					"index":"my_index",
+					"shard":1,
+					"node":"192.168.112.149"
+				}
+			}
+		]
+	}
+	
+	
+	手动迁移分片：
+
+	POST /_cluster/reroute
+	{
+		"commands":[
+			{
+				"move":{
+					"index":"my_index3",
+					"shard":4,
+					"from_node":"192.168.112.148",
+					"to_node": "192.168.112.150"
+				  
+				}
+			}
+		]
+	}
+	
+	
+	#手动取消分片：
+	
+		POST /_cluster/reroute
+		{
+			"commands":[
+				{
+					"cancel":{
+						"index":"school",
+						"shard":1,
+						"node":"192.168.112.153",
+						"allow_primary": true
+					}
+				}
+			]
+		}
+		
+		集群是否允许重均衡：
+			cluster.routing.rebalance.enable:{all,primaries,replicas,none}
+			默认 all
+			
+		集群何时开始重均衡
+			cluster.routing.allocation.allow_rebalance:{always,indices_primaries_active,indices_all_active}
+			默认 indices_all_active
+			
+		集群内同时重均衡的分片数
+			cluster.routing.allocation.cluster_concurrent_rebalance:2
+	
+	
+	
+	
+	
+	数据重建：
+		mapping里面的字段不允许修改，若要修改需要新建索引，把旧的索引的数据放到新的索引里面去
+		1：自己编写程序用scroll方式读出来，再通过bulk接口写到新索引里。
+		2：利用2.3版之后的reindex接口
+		
+		#旧索引写到新索引
+		POST _reindex{
+			"source":{
+				"index":"twitter"
+			},
+			"dest":{
+				"index":"new_twitter"
+			}
+		}
+		
+		#外置版本号控制
+		POST _reindex{
+			"source":{
+				"index":"twitter"
+			},
+			"dest":{
+				"index":"new_twitter",
+				"version_type":"external"
+			}
+		}
+		
+		#只创建新的文档，多个索引合并
+		POST _reindex{
+			"source":{
+				"index":"twitter"
+			},
+			"dest":{
+				"index":"new_twitter",
+				"op_type":"create"
+			}
+		}
+		
+		
+		#有异常的时候是否继续
+		POST _reindex{
+			"conflicts":"proceed",
+			"source":{
+				"index":"twitter"
+			},
+			"dest":{
+				"index":"new_twitter",
+				"op_type":"create"
+			}
+		}
+		
+		
+		#根据条件进行数据重建
+		POST _reindex
+		{
+			"source":{
+				"index":"twitter",
+				"type":"tweet",
+				"query":{
+					"term":{
+						"user":"kimchy"
+					}
+				}
+			},
+			"dest":{
+				"index":"new_twitter"
+			}
+		}
+		
+		
+		#把多个索引的type的文档规整到一个索引下
+		POST _index{
+			"source":{
+				"index":["twitter","blog"],
+				"type":["tweet","post"]
+			},
+			"dest":{
+				"index":"all_together"
+			}
+		}
+		
+		
+		#从原索引取多少个数据写到新的索引
+		POST _reindex
+		{
+			"size":1,
+			"source":{
+				"index":"twitter"
+			},
+			"dest":{
+				"index":{
+					"index":"new_twitter"
+				}
+			}
+		}
+		
+		
+		#从一个索引里面取10000个文档指定字段排序，放入到新的索引中
+		POST _reindex{
+			"size":10000,
+			"source":{
+				"index":"twitter",
+				"sort":{
+					"date":"desc"
+				}
+			},
+			"dest":{
+				"index":"new_twitter"
+			}
+		}
+		
+		
+		#指定字段写入到新的索引中
+		POST _reindex{
+			"source":{
+				"index":"twitter",
+				"_source":["user","tweet"]
+			},
+			"dest":{
+				"index":"new_twitter"
+			}
+		}
+		
+		
+		#从别的集群中读取数据放入到新的索引，远程服务中定义白名单,reindex.remote.whitelist,通配符或者,分割
+		POST _reindex
+		{
+			"source":{
+				"remote":{
+					"host":"http://otherhost:9200",
+					"username":"user",
+					"password":"pass"
+				},
+				"index":"source_index",
+				"query":{
+					"match":{
+						"test":"data"
+					}
+				}
+			},
+			"dest":{
+				"index":"dest_index"
+			}
+		}
+		
+		
+		
+ElasticSearch-冷热分层
+
+	热：当前正在写入的索引
+	温：当前只读不写的索引
+	冷：不读也不写（已关闭的索引）
+	
+	对硬盘的要求不一样。
+	
+	
+	分层节点配置：
+		elasticsearch.yml文件中配置：node.tag属性
+		
+		例如：
+			在一部分热索引节点（硬件性能高的节点）上配置node.tag:hot
+			在一部分温索引节点（硬件性能略低的节点）上配置node.tag:warm
+			在一些冷索引节点上配置node.tag:cold
+			
+			
+		新索引模板配置：
+		
+			PUT /_template/hot_index
+			{
+				"order":0,		#优先级
+				"template":"*",	#匹配索引的名字
+				"settings":{
+					"index.routing.allocation.require.tag":"hot"	#新建的索引都会分配到node.tag=hot的这台机器上
+				}
+			}
+			
+			
+		每天定时任务，对前几天的索引执行自动迁移
+		PUT /my_index-yyyy.mm.dd/_settings
+		{
+			"index":{
+				"routing.allocation.require.tag":""warm
+			}
+		}
+		
+		或者可以使用curator工具帮助完成
+		
+		
+		
+		
+		
+ElasticSearch-健康监控：
+
+	见图	elasticsearch健康监控.png
+	
+	
+	
+	
+ElasticSearch-集群优化
+
+	系统参数：
+	
+		/etc/sysctl.conf -> vm.max_map_count
+		
+	禁止内存交换：
+	
+		memory_lock锁内存
+			启动时检查内存是否够不够
+		禁用swap
+		
+	最大文件数：
+	
+		/etc/security/limits.conf
+			linux开启进程有上限
+		
+	创建本地线程数：
+	
+		/etc/security/limits.d/90-nproc.conf
+		
+		
+	独立部署：
+	
+		Master Node:主节点、更新同步元数据
+		Data Node:数据存储、查询
+		Client Node:协调节点、处理请求
+		
+	集群分组：
+		
+		Node tag进行分组
+		
+	定义分片规则：
+	
+		设置索引分片分配规则：
+		PUT /my_index/settings{
+			"index.routing.allocation.exclude.xxx":"yyy,zzz",
+			"index.routing.allocation.include.xxx":"yyy,zzz",
+			"index.routing.allocation.require.xxx":"yyy,zzz",
+		}
+		
+		
+		默认Node tags
+		_name		节点名称
+		_host_ip	节点host ip
+		_publish_ip	节点对外发布ip
+		_ip			host ip 或者对外发布ip
+		_host		节点hostname
+		
+		
+		
+	分片分配意识 Awareness:
+		
+		让ES知道多个节点位于同一个物理机、机架、同区域，此时ES在分配分片时，让同一个
+		分片主、副本分片尽量不分配到同一个区域
+		elasticsearch.yml -> node.zone.zone1
+		cluster.routing.allocation.awareness.attributes:zone
+		
+		
+	强制分布：
+		同一个主分片和副本分片必须不能分配到同一个区域
+		cluster.routing.allocation.awareness.force.zone.values:zone1,zone2
+		cluster.routing.allocation/awareness.attributes:zone
+		
+		
+	索引规划
+	
+		设置合理的索引分片数：
+			每个分片大小控制在10GB以内
+			
+		每个节点最多分配的分片个数：
+		index.routing.allocation.total_shards_per_node:num
+		num=总分片数/节点数+1
+		
+		
+	导入优化：
+	
+		使用bulk批量导入接口
+		增大refresh_interval刷新间隔
+		增大translog flush间隔
+		减少副本数量，导入大量数据时可以设置为0
+		建立合理的mapping，只对必要的字段分词和索引
+		
+		
+		
+	内存优化
+	
+		尽可能使用doc_values，少用fielddata
+		string类型：尽量使用keyword
+		限制查询数据量（from,size），严谨深度分页
+		
+		设置fielddata缓存参数：
+			缓存大小：indices.fielddata.cache.size:30%（默认无限制,容易出现oom）
+			缓存有效期：indices.fielddata.cache.expire:"720h"
+			
+		设置内存断路器：
+			indices.breaker.fielddata.limit:30%（默认60%）
+			indices.breaker.request.limit:20%（默认40%）
+			indices.breaker.total.limit:50%（默认70%）
+			
+			
+	fielddata是什么？
+	
+		搜索利用inverted index（倒排索引）
+		聚合利用uninverted index（field data cache）
+		
+		在第一次查询时，从整个inverted index里读取出来document，生成field data数据，
+		存放在内存，以便做聚合。
+		
+		Doc -> {words}	文档对应有哪些词的一个操作
+		
+	
+	doc_values是什么？
+		
+		存储在磁盘文件中（列式存储）
+		
+		在创建索引时生成，不会利用JVM内存，直接生成到物理内存中
+		
+		利用操作系统的缓存，可以提供更好的性能
+		
+		10%-25%慢于内存的fielddata
+		
+		只能存储not-analyzed的字符串
+		
+		
+	查询优化
+	
+		尽量使用Filter代替Query
+			
+			query搜索需要计算相关度评分并排序，无法使用缓存
+			filter过滤无需计算相关度评分，可以使用缓存。
+			
+		尽量使用Bool组合代替AND OR
+		
+			bool使用must、must_not、should、filter条件可以复用，
+			结果保存在bitset中，做交集效率高。
+			
+			and\or逐个文档处理、检查是否匹配，效率低。
+			把过滤的文档条件放在最前面。
+			
+			Routing（分片键）
+				
+				自定义路由规则，把同区域的文档存在同一个分片上，
+				提高查询性能。
+				
+				
+		磁盘使用率限制
+		
+			磁盘使用超过阈值后不再分配新的分片
+			cluster.routing.allocation.disk.watermark.low:"85%"
+			
+			磁盘使用超过阈值后迁移现有分片：
+			cluster.routing.allocation.disk.watermark.high:"90%"
+			
+			检测时间间隔：
+			cluster.info.update.interval:"2m"
+			
+			
+			
+		集群异常恢复
+		
+			允许同时打开的数据流通道
+			cluster.routing.allocation.node_concurrent_recoveries:3
+			
+			每秒传输的最大数据量
+			indices.recovery.max_bytes_per_sec:"100mb"
+			
+			是否启用压缩
+			indices.recovery.compress:true
+			
+			每次复制事务日志块大小
+			indices.recovery.translog_size:"512k"
+			
+			每次复制事务日志行数
+			indices.recovery.translog_ops:1000
+			
+			每次复制的数据块大小
+			indices.recovery.file_chunk_size:"512k"
+			
+			索引的优先级优先恢复索引
+			
+			
+			
+图解ES
+
+	ES集群由多个节点组成，每个Node节点里面多个分片
+	
+
+
+elasticsearch 快照及从快照中恢复数据：
+
+	--集群使用sanpshot快照需要共享文件系统，所以要先配置个nfs
+	--安装nfs
+	sudo yum install nfs-utils -y
+	sudo mkdir /usr/local/elastic_backup
+	sudo chown -R wty:wty /usr/local/elastic_backup
+	sudo vi /etc/exports
+	/usr/local/elastic_backup 192.168.1.0/24(rw,sync,no_root_squash)
+	
+	
+	--关闭selinux防火墙
+	sudo setenforce 0
+	sudo service rpcbind start
+	sudo service nfs start
+
+	--所有es节点挂载nfs
+	sudo mkdir -p /mnt/elastic_backup
+	sudo chown -R es:es /mnt/elastic_backup
+	sudo yum install nfs-utils -y
+	sudo mount -t nfs 192.168.1.101:/usr/local/elastic_backup /mnt/elastic_backup
+	showmount -e 192.168.1.101
+
+	--开启快照,elastichsearch配置
+	--需要在master的elasticsearch.yml中添加，后重启es后才能创建仓库
+	path.repo: ["/mnt/elastic_backup"]
+
+
+	
+	
+Grok Debugger
+
+	http://grokdebug.herokuapp.com/
+
+——————————————————————————————————————————————————————————————————————————————————————————————————
+
+	
+kibana学习
+
+
+
+
+
+
+
