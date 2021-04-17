@@ -1,0 +1,139 @@
+微服务架构与spring cloud
+1：微服务架构概述
+2：spring cloud简介
+3：spring cloud技术栈
+4：总结
+
+
+
+1：微服务架构概述：
+	1：什么是微服务
+	2：主题词01：95后数字化生活 - 落地维度
+	3：主题词02：基于分布式微服务架构-落地维度
+
+
+	1：什么是微服务？
+		马丁弗勒提出的微小的、独立的进程、可以互相通讯的、轻量级、围绕业务能力构建的、可以独立部署的。
+
+		微服务架构是一种架构模式，它提倡将单一应用程序划分成一组小的服务，服务之间互相协调、相互配合，
+		为用户提供最终价值。每个服务运行在其独立的进程中，服务与服务之间采用轻量的通讯机制互相协作（
+		通常是基于http协议的RESTful API）。每个服务都围绕着具体业务进行构建，并且能够独立的部署到生产
+		环境、类生产环境等。另外，应当尽量避免统一的、集中式的服务管理机制，对具体的一个服务而言，应根
+		据业务上线文，选择合适的语言、工具对其进行构建。
+	
+	
+	
+	2：主题词01：95后数字化生活
+
+	手机、笔记本电脑，只能加点，平板电脑，生活箱包，VR女友。。。
+
+	宅家经济
+
+	品牌。小米、苹果
+
+
+	3：主题词02：基于分布式微服务架构
+		
+		满足哪些维度？
+			支撑起这些维度的具体技术？？？？
+		
+		网关（gateway）
+		熔断的仪表盘（breaker dashboard）
+		服务注册（service registry）
+		消息中间件（message brokers）
+		数据库（database）
+		分布式链路追踪（distributed tracing）
+		配置中心（config dashboard）
+		
+		融合协调，使构建分布式系统更加简单。
+		
+		
+	面试：分布式服务的了解
+
+		服务注册与发现、服务调用、服务熔断、负载均衡、服务降级、服务消息队列、
+		配置中心管理、服务网关、服务监控、全链路追踪、自动化构建部署、服务定时任务调度操作。
+		
+		
+
+
+
+2：spring cloud简介
+	1:是什么
+	2：符合微服务技术维度
+	
+	1：是什么
+		
+		分布式服务架构的一种体现，应该有多种维度。
+		spring Cloud = 分布式微服务架构的一站式解决方案，是多种微服务架构落地技术的集合体，
+		俗称微服务全家桶
+	
+		springCloud这个大集合里面有多少种技术？
+		
+		##图片 001_002springCloud技术栈
+		
+		spring config 分布式配置中心和管理
+		spring cloud Bus 消息总线
+		Eureka 服务发现 - 被替换了 nacos
+		hystrix 熔断
+		zuul 路由
+		Archaius
+		Consul
+		Spring Cloud Sleuth
+		Spring Cloud Data Flow
+		Spring Cloud Security
+		Spring Cloud Zookeeper
+		Spring Cloud Stream
+		Spring Cloud CLI
+		Spring Cloud Ribbon
+		Feign
+		Spring Cloud Task
+		Spring Cloud Connectors
+		Spring Cloud Cluster
+		Spring Cloud Starters
+		Spring Cloud for Cloud Foundry
+		Turbine
+		
+		
+		spring Cloud 俨然已成为微服务开发的主流技术栈，在国内开发者社区非常火爆
+		
+		”微“力十足，互联网大厂微服务架构案例。
+
+		
+		
+		技术选型：
+		
+			1：服务注册与发现 Eureka
+			2：服务负载与调用 Ribbon -> NETFLIX OSS
+			3：服务负载与调用 Feign -> NETFLIX FEIGN
+			4：服务熔断降级 Hystrix -> DEFEND YOUR APP
+			5：服务网关 Zuul -> NETFLIX OSS
+			6：服务分布式配置 Spring Cloud Config
+			7：服务开发 -> Spring Boot
+			
+			
+			天上飞的理念，必然有落地的实现。
+			
+		2020年2月份。。。。开始变了。。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
