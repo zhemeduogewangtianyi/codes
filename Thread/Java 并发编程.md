@@ -1,8 +1,5 @@
 # Java 并发编程
 
- 发表于 2019-04-16 | 分类于 [面试](http://blog.cuzz.site/categories/面试/)
-
- 字数统计: 9,375 | 阅读时长 ≈ 40
 
 ## 请谈谈你对 volatile 的理解
 
