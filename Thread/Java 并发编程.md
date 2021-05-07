@@ -152,13 +152,11 @@ volatile 实现禁止指令重排序的优化，从而避免了多线程环境�
 
 由于编译器个处理器都能执行指令重排序优化，如果在指令间插入一条 Memory Barrier 则会告诉编译器和 CPU，不管什么指令都不能个这条 Memory Barrier 指令重排序，也就是说通过插入内存屏障禁止在内存屏障前后执行重排序优化。内存屏障另一个作用是强制刷出各种 CPU 缓存数据，因此任何 CPU 上的线程都能读取到这些数据的最新版本。
 
-下面是保守策略下，volatile写插入内存屏障后生成的指令序列示意图：
+保守策略下，volatile写插入内存屏障后生成的指令序列示意图：
 
-[![0e75180bf35c40e2921493d0bf6bd684_th](http://blog.cuzz.site/2019/04/16/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/0e75180bf35c40e2921493d0bf6bd684_th.png)](http://blog.cuzz.site/2019/04/16/Java并发编程/0e75180bf35c40e2921493d0bf6bd684_th.png)
 
-下面是在保守策略下，volatile读插入内存屏障后生成的指令序列示意图：
+在保守策略下，volatile读插入内存屏障后生成的指令序列示意图：
 
-[![21ebc7e8190c4966948c4ef4424088be_th](http://blog.cuzz.site/2019/04/16/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/21ebc7e8190c4966948c4ef4424088be_th.png)](http://blog.cuzz.site/2019/04/16/Java并发编程/21ebc7e8190c4966948c4ef4424088be_th.png)
 
 #### 线程安全性保证
 
@@ -981,13 +979,37 @@ Thread-4 离开车位
 
 ### 什么是阻塞队列
 
-[![img](http://blog.cuzz.site/2019/04/16/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/1234sdafsdf.png)](http://blog.cuzz.site/2019/04/16/Java并发编程/1234sdafsdf.png)
-
 - 阻塞队列，顾名思义，首先它是一个队列，而一个阻塞队列在数据结构中所起的作用大致如图所示：
 
 - 当阻塞队列是空时，从队列中获取元素的操作将会被阻塞。
 
 - 当阻塞队列是满时，往队列里添加元素的操作将会被阻塞。
+
+- 常见的阻塞队列
+
+	ArrayBlockingQueue：
+		基于数组的阻塞队列实现，在ArrayBlockingQueue内部，维护了一个定长数组，一边缓存队列中的数据对象，
+		其内部没实现读写分离，意味着生产者和消费者不能完全并行，长度需要定义，可以指定先进先出或者先进后出，
+		也叫有界队列，在很多场合非常适合使用。
+		
+	LinkedBlockingQueue：
+		基于链表的阻塞队列，同ArrayBlockingQueue类似，其内部也维持着一个数据缓冲队列（由链表构成的队列），
+		LinkedBlockingQueue之所以能够高效的处理并发数据，是因为其内部实现采用分离锁（对鞋分离两个锁），从而
+		实现生产者和消费者的完全并行运行。他是一个无界队列。
+		
+		
+	SynchronousQueue：
+		一种没有缓冲的队列，生产者生产的数据直接会被消费者获取并消费。
+		
+	PriorityBlockingQueue：
+		基于优先级的阻塞队列，优先级的判断通过构造函数传入的Comparator对象来决定，传入队列的对象必须实现
+		Comparator接口，在实现PriorityBlockingQueue时，内部控制线程同步的锁采用的是 公平锁，他也是一个无界
+		的队列
+		
+	DelayQueue：
+		带有延迟时间的Queue，其中的元素只有当其指定的延迟时间到了，才能够从队列中获取该元素。DelayQueue中的
+		元素必须实现了Delayed接口，DelayQueue是一个没有大小限制的队列，应用场景很多，比如对缓存超时的数据进行
+		清理、任务超时处理、空闲连接关闭等。
 
 - 核心方法
 
